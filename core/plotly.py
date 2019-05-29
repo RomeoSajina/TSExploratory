@@ -16,8 +16,15 @@ warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 class Plotly():
 
     # https://material.io/design/color/the-color-system.html#tools-for-picking-colors
-    # All @500 colors from MD palette
-    COLOR_PALETTE = ["#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", "#795548", "#9E9E9E"]
+    COLOR_PALETTE = [
+        # All @500 colors from MD palette
+        "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50",
+        "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", "#795548", "#9E9E9E",
+        
+        # All @900 colors from MD palette
+        "#B71C1C", "#880E4F",  "#4A148C",  "#311B92",  "#1A237E",  "#0D47A1",  "#01579B",  "#006064",  "#004D40",
+        "#1B5E20",  "#33691E",  "#827717",  "#F57F17",  "#FF6F00",  "#E65100",  "#BF360C",  "#3E2723",  "#212121",  "#263238"
+    ]
     HISTORY_COLOR = "#2196F3" # blue
     REAL_COLOR = "#00E676" # green
     PREDICTED_COLOR = "#AA00FF" # "#D50000" # red
@@ -119,11 +126,28 @@ class Plotly():
 
         Plotly._plot_score_text(test, predictions, mae, acc, Plotly.PREDICTED_COLOR)
 
-        legend = list(["y", "real (test)", "forecast"])
+        legend = list(["y (train)", "y (test)", "Forecast"])
 
         if conf_int is not None:
             plt.fill_between(predictions_index, conf_int[:, 0], conf_int[:, 1], color=Plotly.CONFIDENCE_INTERVAL_COLOR, alpha=Plotly.ALPHA, label="conf_int")
             legend.append("95% confidence interval")
+
+        if config.verbose > 0 and len(predictions) > len(test):
+
+            print("Adding possible values, average of previous years, after test set...")
+            x = [config.all.index[-1] + datetime.timedelta(x) for x in range(0, len(predictions) - len(test))]
+
+            y = config.all.groupby([config.all.index.month, config.all.index.day]).mean().y.values
+            split_index = (x[0] - datetime.datetime(x[0].year, 1, 1)).days
+            y_2 = []
+
+            while len(y_2) < len(x):
+                y_2 = np.concatenate([y_2, y[split_index:], y[:split_index]])
+
+            y_2 = y_2[:len(x)]
+
+            plt.plot(x, y_2, label="Possible values: AVG(previous years)", color=Plotly.CONFIDENCE_INTERVAL_COLOR)
+            legend.append("Likely values (average of previous years)")
 
         Plotly._show_texts()
         Plotly.zoom(config, predictions)
@@ -200,8 +224,33 @@ class Plotly():
         plt.show()
 
     @staticmethod
-    def savefig(name):
+    def plot_nn_train_history(history):
+        print(history.history.keys())
+
+        # summarize history for accuracy
+        plt.plot(history.history["acc"])
+        plt.plot(history.history["val_acc"])
+        plt.title("model accuracy")
+        plt.ylabel("accuracy")
+        plt.xlabel("epoch")
+        plt.legend(["train", "test"], loc="best")
+        plt.show()
+
+        # summarize history for loss
+        plt.plot(history.history["loss"])
+        plt.plot(history.history["val_loss"])
+        plt.title("model loss")
+        plt.ylabel("loss")
+        plt.xlabel("epoch")
+        plt.legend(["train", "test"], loc="brst")
+        plt.show()
+
+    @staticmethod
+    def savefig(name, title=None):
+        if title is not None:
+            plt.title(title)
         plt.savefig(name)
+        plt.close('all')
 
     @staticmethod
     def plot_seasonal_decompose(config):

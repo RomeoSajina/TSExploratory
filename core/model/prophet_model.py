@@ -28,8 +28,12 @@ class ProphetModelWrapper(BaseModelWrapper):
     def fit_model(self, refitting=False):
         self.model = self._model_fit_fnc(self.config)
 
-    def predict(self, days=None):
-        return self._predict(days)
+    def predict(self, days=None, return_confidence_interval=False):
+
+        if return_confidence_interval:
+            return self._predict(days), None #TODO: implement confidence interval
+        else:
+            return self._predict(days)
 
     def _predict(self, days=None):
 

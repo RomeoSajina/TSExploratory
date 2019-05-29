@@ -4,7 +4,7 @@ import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 import random
-from core.config import Config
+from core import Config
 from core import Plotly
 
 
@@ -12,6 +12,9 @@ class DataFactory:
 
     @staticmethod
     def _prebuild_data():
+
+        statuses = ["EF", "EO", "EP", "F", "NA", "NF", "O", "P", "PF", "PO"]
+        channels = ["A", "I", "B"]
 
         data = pd.read_csv(Config.base_dir() + "data/reservations_all.csv",
                            parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
@@ -21,6 +24,10 @@ class DataFactory:
         mx = g["VRIJEME_ZAMRZAVANJA"].transform(max)
 
         data = data[data["VRIJEME_ZAMRZAVANJA"] == mx]
+
+        data.STATUS_REZERVACIJE.fillna("F")
+        data = data[[x in statuses for x in data.STATUS_REZERVACIJE]]
+        data = data[[x in channels for x in data.KANAL_ID]]
 
         columns = ["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "BROJ_SOBA_BOOK"]
 
@@ -204,6 +211,81 @@ class DataFactory:
         plt.ylabel("Broj soba")
         plt.title("Prosječna kreiranja rezervacija soba za datume (godine: 2016-2018)")
 
+    @staticmethod
+    def build_aggregated():
+
+        def build_extended():
+            data = pd.read_csv(Config.base_dir() + "data/reservations_all.csv",
+                               parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
+                               low_memory=False)
+
+            g = data.groupby(["HOTEL", "GODINA", "SIF_REZERVACIJE"])
+            mx = g["VRIJEME_ZAMRZAVANJA"].transform(max)
+
+            data = data[data["VRIJEME_ZAMRZAVANJA"] == mx]
+
+            columns = ["DATUM_KREIRANJA", "KANAL_ID", "DATUM_OD", "DATUM_DO", "BROJ_OSOBA_BOOK",
+                       "BROJ_SOBA_BOOK", "STORNO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA", "HOTEL"]
+
+            data = data[columns]
+
+            data.to_csv(Config.base_dir() + "data/reservations_extended.csv")
+            return data
+
+        def load_extended():
+            data = pd.read_csv("./data/reservations_extended.csv",
+                               parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
+                               index_col=0,
+                               low_memory=False)
+            return data
+
+        try:
+            data = load_extended()
+        except:
+            data = build_extended()
+
+        data.DATUM_OD = data.DATUM_OD.dt.normalize()
+        data.DATUM_DO = data.DATUM_DO.dt.normalize()
+        data.DATUM_KREIRANJA = data.DATUM_KREIRANJA.dt.normalize()
+
+        data["DATUM_OD_C"] = pd.to_datetime([datetime.date(2018, 2, 28) if x == datetime.date(2016, 2, 29) else x.replace(year=2018) for x in data.DATUM_OD.dt.date.values])
+        data["DATUM_DO_C"] = pd.to_datetime([datetime.date(2018, 2, 28) if x == datetime.date(2016, 2, 29) else x.replace(year=2018) for x in data.DATUM_DO.dt.date.values])
+
+        min_date = datetime.datetime(2018, 6, 15)
+        max_date = datetime.datetime(2018, 9, 15)
+
+        range_dates = [min_date + datetime.timedelta(days=x) for x in range(0, (max_date - min_date).days + 1)]
+
+        assert min_date == range_dates[0] and max_date == range_dates[-1], "Range of dates generated incorrectly"
+
+        elem_list = []
+
+        for index in range(len(range_dates)):
+
+            obs_date = range_dates[index]
+
+            obs_date_data = data[(data.DATUM_OD_C <= obs_date) & (data.DATUM_DO_C > obs_date)]
+
+            g = obs_date_data.groupby(["HOTEL", "KANAL_ID", "DATUM_KREIRANJA"])
+
+            for group in g.groups:
+                hotel = group[0]
+                kanal = group[1]
+                datum = group[2]
+
+                filtered_data = obs_date_data[(obs_date_data.HOTEL == hotel) & (obs_date_data.KANAL_ID == kanal) & (obs_date_data.DATUM_KREIRANJA == datum)]
+
+                ts_elem = dict()
+                ts_elem["DATUM_KREIRANJA"] = datum
+                ts_elem["HOTEL"] = hotel
+                ts_elem["KANAL"] = kanal
+                ts_elem["ZA_DATUM"] = obs_date
+                ts_elem["BROJ_SOBA_BOOK"] = filtered_data.BROJ_SOBA_BOOK.sum()
+
+                elem_list.append(ts_elem)
+
+        df = pd.DataFrame(elem_list)
+        df.to_csv(Config.base_dir() + "data/reservations_aggregated.csv", sep=";")
 
     """
     DataFactory.plot_yearly()
@@ -217,7 +299,6 @@ class DataFactory:
     DataFactory.plot_for_target_dates(target_dates=target_dates, x_is_distance=False)
                                                     
     # Cijeli 7 mj
-    
     target_dates = [datetime.datetime(2018, 7, 1) + datetime.timedelta(x) for x in range(0, 31)]
     DataFactory.plot_for_target_dates(target_dates=target_dates, x_is_distance=False)
     

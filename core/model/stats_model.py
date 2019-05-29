@@ -32,8 +32,12 @@ class ARIMAModelWrapper(BaseModelWrapper):
         self.model = self._model.fit(trend='nc')
         #print(self.model.summary())
 
-    def predict(self, days=None):
-        return self._predict(days)
+    def predict(self, days=None, return_confidence_interval=False):
+
+        if return_confidence_interval:
+            return self._predict(days), None #TODO: implement confidence interval
+        else:
+            return self._predict(days)
 
     def _predict(self, days=None):
 

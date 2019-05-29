@@ -51,7 +51,7 @@ class BaseModelWrapper(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict(self, days=None):
+    def predict(self, days=None, return_confidence_interval=False):
         raise NotImplementedError()
 
     @abstractmethod
@@ -113,9 +113,14 @@ class BaseModelWrapper(ABC):
 
         return predictions
 
-    def plot_predict(self, days=None):
-        predictions = self.predict(days=days)
-        Plotly.plot_predictions(config=self.config, predictions=predictions)
+    def plot_predict(self, days=None, show_confidence_interval=True):
+
+        if show_confidence_interval:
+            predictions, conf_int = self.predict(days=days, return_confidence_interval=True)
+        else:
+            predictions, conf_int = self.predict(days=days, return_confidence_interval=False), None
+
+        Plotly.plot_predictions(config=self.config, predictions=predictions, conf_int=conf_int)
 
     def plot_predict_multiple(self):
         predictions = self.predict_multiple()
@@ -164,8 +169,12 @@ class PersistentModelWrapper(BaseModelWrapper):
     def fit_model(self, refitting=False):
         pass
 
-    def predict(self, days=None):
-        return self._predict(days)
+    def predict(self, days=None, return_confidence_interval=False):
+
+        if return_confidence_interval:
+            return self._predict(days), None #TODO: implement confidence interval
+        else:
+            return self._predict(days)
 
     def _predict(self, days=None):
 

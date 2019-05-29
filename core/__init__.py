@@ -21,6 +21,19 @@ from core.model.nn_model import LSTMModelWrapper
 from core.model.nn_model import TimeDistributedCNNLSTMModelWrapper
 from core.model.nn_model import CustomModelWrapper
 from core.model.nn_model import CNNModelWrapper
-from core.model.nn_model import MultichannelCNNModelWrapper
+from core.model.nn_model import MultiCNNModelWrapper
 from core.model.nn_model import MLPModelWrapper
-
+from core.model.nn_model import AutoencoderMLPModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutMLPModelWrapper
+from core.model.nn_model import RandomDropoutLSTMModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutBidirectionalLSTMModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutTimeDistributedCNNLSTMModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutCNNLSTMModelWrapper
+from core.model.nn_model import AutoencoderCNNLSTMTimeDistributedModelWrapper
+from core.model.nn_model import RandomDropoutGRUModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutCNNModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutMultiCNNModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutMLPLSTMModelWrapper
+from core.model.nn_model import AutoencoderRandomDropoutMLPGRUModelWrapper
+from core.model.nn_model import ResNetClassificationModelWrapper
+from core.model.nn_model import ResNetLSTMModelWrapper

@@ -37,7 +37,7 @@ class Config:
         self.end_date = datetime.datetime(2015, 5, 1)
         self.min_date = datetime.datetime(2018, 5, 1)
         self.gaps = [60, 30, 7]
-        self.cddm = AlwaysConceptDriftDetectionMethod()# IgnoreConceptDriftDetectionMethod()# EarlyConceptDriftDetectionMethod()
+        self.cddm = None #AlwaysConceptDriftDetectionMethod()# IgnoreConceptDriftDetectionMethod()# EarlyConceptDriftDetectionMethod()
         self.verbose = 2
 
         """
@@ -219,3 +219,35 @@ class Metadata:
     @staticmethod
     def version_4():
         return Metadata(4, 300, 1, 1e-5)
+
+    @staticmethod
+    def version_5():
+        return Metadata(5, 60, 3, 5e-4)
+
+    @staticmethod
+    def version_6():
+        return Metadata(6, 100, 3, 5e-5)
+
+    @staticmethod
+    def version_7():
+        return Metadata(7, 200, 3, 3e-5)
+
+    @staticmethod
+    def version_8():
+        return Metadata(8, 300, 3, 1e-5)
+
+    @staticmethod
+    def version_9():
+        return Metadata(9, 60, 7, 5e-4)
+
+    @staticmethod
+    def version_10():
+        return Metadata(10, 100, 7, 5e-5)
+
+    @staticmethod
+    def version_11():
+        return Metadata(11, 200, 7, 3e-5)
+
+    @staticmethod
+    def version_12():
+        return Metadata(12, 300, 7, 1e-5)
