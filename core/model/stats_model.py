@@ -20,7 +20,7 @@ class ARIMAModelWrapper(BaseModelWrapper):
         adf = sm.tsa.stattools.adfuller(self.config.all.y)
         print("p-value y: {0:.10f}".format(float(adf[1])))
         # Null hipoteza je da TS nije stacionarna. Ako je p < 0.05 onda se odbacuje null hipoteza i prihvaća se hipoteza da je TS stacionarna
-        # p-value y: 0.0000024043
+        # p-value y: 0.0013095158
         # Zaključak: nije potrebno diferenciranje
         return adf
 

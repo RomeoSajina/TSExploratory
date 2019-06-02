@@ -361,6 +361,9 @@ class NNBaseModelWrapper(BaseModelWrapper):
         Properties.save(self)
         self.model.save(self._build_model_file_name())
 
+    def info(self):
+        return self.__class__.__name__.replace("ModelWrapper", "") + "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version)
+
     def _build_model_file_name(self):
         name = self.config.base_dir + "models/final/" + self.__class__.__name__.replace("ModelWrapper", "")
         name += "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version) + ".h5"

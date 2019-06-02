@@ -47,10 +47,10 @@ config = DataFactory.load_ts()
 config.cddm = None
 
 
-config.apply_metadata(Metadata.version_1())
+#config.apply_metadata(Metadata.version_1())
 #config.apply_metadata(Metadata.version_2())
 #config.apply_metadata(Metadata.version_3())
-config.apply_metadata(Metadata.version_4())
+#config.apply_metadata(Metadata.version_4())
 
 # Base models
 model = PersistentModelWrapper(config)
@@ -115,29 +115,30 @@ for i in range(1, 13):
 
 
 ALL = [
-    #BidirectionalLSTMModelWrapper,
-    #CNNLSTMModelWrapper,
-    #GRUModelWrapper,
-    #LSTMModelWrapper,
-    #TimeDistributedCNNLSTMModelWrapper,
-    #CNNModelWrapper,
-    #MultiCNNModelWrapper,
-    #MLPModelWrapper,
-    #AutoencoderMLPModelWrapper,
-    #AutoencoderRandomDropoutMLPModelWrapper,
-    #RandomDropoutLSTMModelWrapper,
-    #AutoencoderRandomDropoutBidirectionalLSTMModelWrapper,
-    #AutoencoderRandomDropoutTimeDistributedCNNLSTMModelWrapper,
-    #AutoencoderRandomDropoutCNNLSTMModelWrapper,
+    BidirectionalLSTMModelWrapper,
+    CNNLSTMModelWrapper,
+    GRUModelWrapper,
+    LSTMModelWrapper,
+    TimeDistributedCNNLSTMModelWrapper,
+    CNNModelWrapper,
+    MultiCNNModelWrapper,
+    MLPModelWrapper,
+    AutoencoderMLPModelWrapper,
+    AutoencoderRandomDropoutMLPModelWrapper,
+    RandomDropoutLSTMModelWrapper,
+    AutoencoderRandomDropoutBidirectionalLSTMModelWrapper,
+    AutoencoderRandomDropoutTimeDistributedCNNLSTMModelWrapper,
+    AutoencoderRandomDropoutCNNLSTMModelWrapper,
     AutoencoderCNNLSTMTimeDistributedModelWrapper,
     RandomDropoutGRUModelWrapper,
     AutoencoderRandomDropoutCNNModelWrapper,
     AutoencoderRandomDropoutMultiCNNModelWrapper,
-    #AutoencoderRandomDropoutMLPLSTMModelWrapper,
-    #AutoencoderRandomDropoutMLPGRUModelWrapper,
-    #ResNetClassificationModelWrapper,
-    #ResNetLSTMModelWrapper
+    AutoencoderRandomDropoutMLPLSTMModelWrapper,
+    AutoencoderRandomDropoutMLPGRUModelWrapper,
+    ResNetLSTMModelWrapper,
+    ResNetClassificationModelWrapper
 ]
+
 
 for model_class in ALL:
 
@@ -149,17 +150,18 @@ for model_class in ALL:
         #model = TimeDistributedCNNLSTMModelWrapper(config)
         # model.epochs = 2000
 
-        # model.train_sequentially = False
+        #model.train_sequentially = False
         model.fit()
         model.plot_train()
         model.save_train_figure()
 
         Plotly.ZOOM = -305
-        model.plot_predict(425, show_confidence_interval=False)
+        model.plot_predict(425, show_confidence_interval=True)
         model.save_prediction_figure()
         tf.keras.backend.clear_session()
 
 
+# TF Problem: https://github.com/tensorflow/tensorflow/issues/27511 -> solution: https://github.com/tensorflow/tensorflow/commit/5956c7e9c44e23cd1a006df872ae468201fdb600#diff-e329ed6b8d30dca9a441689005047035
 
 """
 BEST: 
