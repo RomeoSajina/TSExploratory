@@ -60,6 +60,7 @@ class Config:
         self.base_dir = Config.base_dir()
         self.version = 1
         self.margin_loss = 5e-4
+        self.apply_metadata(Metadata.version_1())
 
     @staticmethod
     def base_dir():

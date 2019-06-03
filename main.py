@@ -1,6 +1,7 @@
 from sklearn.exceptions import DataConversionWarning
 import tensorflow as tf
 import warnings
+import datetime
 from core import Plotly
 from core import Config, Metadata
 from core import DataFactory
@@ -46,11 +47,25 @@ warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 config = DataFactory.load_ts()
 config.cddm = None
 
-
 #config.apply_metadata(Metadata.version_1())
 #config.apply_metadata(Metadata.version_2())
 #config.apply_metadata(Metadata.version_3())
 #config.apply_metadata(Metadata.version_4())
+
+
+DataFactory.plot_yearly()
+
+target_dates = [datetime.datetime(2018, 6, 1),
+                datetime.datetime(2018, 7, 1),
+                datetime.datetime(2018, 8, 1),
+                datetime.datetime(2018, 9, 1)]
+
+DataFactory.plot_for_target_dates(target_dates=target_dates, x_is_distance=True)
+DataFactory.plot_for_target_dates(target_dates=target_dates, x_is_distance=False)
+
+# Cijeli 7 mj
+target_dates = [datetime.datetime(2018, 7, 1) + datetime.timedelta(x) for x in range(0, 31)]
+DataFactory.plot_for_target_dates(target_dates=target_dates, x_is_distance=False)
 
 # Base models
 model = PersistentModelWrapper(config)
@@ -91,20 +106,18 @@ model = ResNetClassificationModelWrapper(config)
 model = ResNetLSTMModelWrapper(config)
 
 model.train_sequentially = False
-#model.save_load_model = False
 
 model.fit()
-#model.fit_model()
 
 model.plot_train()
 #model.save_train_figure()
 
 model.plot_predict_multiple()
 model.plot_predict()
-model.plot_predict(730)
+
+Plotly.ZOOM = -305
+model.plot_predict(425)
 #model.save_prediction_figure()
-Plotly.ZOOM=-100
-Plotly.ZOOM=None
 
 
 for i in range(1, 13):
@@ -147,8 +160,6 @@ for model_class in ALL:
     for i in range(1, 13):
         config.apply_metadata(getattr(Metadata, "version_" + str(i))())
         model = model_class(config)
-        #model = TimeDistributedCNNLSTMModelWrapper(config)
-        # model.epochs = 2000
 
         #model.train_sequentially = False
         model.fit()

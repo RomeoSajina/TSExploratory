@@ -126,3 +126,5 @@ test.py
 .idea/
 
 logs/
+
+cmd_plot/

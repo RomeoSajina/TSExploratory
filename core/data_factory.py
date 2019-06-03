@@ -210,6 +210,8 @@ class DataFactory:
         plt.xlabel("Broj dana")
         plt.ylabel("Broj soba")
         plt.title("Prosječna kreiranja rezervacija soba za datume (godine: 2016-2018)")
+        plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
+        plt.show()
 
     @staticmethod
     def build_aggregated():
@@ -233,7 +235,7 @@ class DataFactory:
             return data
 
         def load_extended():
-            data = pd.read_csv("./data/reservations_extended.csv",
+            data = pd.read_csv(Config.base_dir() + "data/reservations_extended.csv",
                                parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
                                index_col=0,
                                low_memory=False)
@@ -286,6 +288,14 @@ class DataFactory:
 
         df = pd.DataFrame(elem_list)
         df.to_csv(Config.base_dir() + "data/reservations_aggregated.csv", sep=";")
+
+    @staticmethod
+    def load_stats():
+        return pd.read_csv(Config.base_dir() + "data/stats.csv", index_col=0)
+
+    @staticmethod
+    def save_stats(stats):
+        stats.to_csv(Config.base_dir() + "data/stats.csv")
 
     """
     DataFactory.plot_yearly()

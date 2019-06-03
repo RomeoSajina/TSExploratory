@@ -336,6 +336,9 @@ class NNBaseModelWrapper(BaseModelWrapper):
 
                 X, y = self.X_y(dummy_config)
 
+                # TODO: adjust learning rate all times except first time if it doesn't do on it's own already
+                #K.set_value(self.model.optimizer.lr, self.refitting_lr)
+
                 history = self.model.fit(X, y,
                                          epochs=self.epochs,
                                          verbose=self.config.verbose,
@@ -377,7 +380,7 @@ class NNBaseModelWrapper(BaseModelWrapper):
 
     def __save_figure(self, info):
         model_info = self.__class__.__name__.replace("ModelWrapper", "") + "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version) + "_" + info
-        name = self.config.base_dir + "figures/" + model_info
+        name = self.config.base_dir + "figures/models/" + model_info
         #name += "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version) + "_" + info
         Plotly.savefig(name + ".png", model_info)
 

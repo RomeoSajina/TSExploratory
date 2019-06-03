@@ -116,6 +116,7 @@ class Plotly():
 
         # Calculate error only on available test data, prediction can be larger than test set
         mae, rmse, acc = Plotly.print_stats(test.y.values, predictions[:len(test)], return_stats=True)
+        likely_mae, likely_rmse, likely_acc = 0., 0., 0.
 
         plt.plot(train.y, label="y", color=Plotly.HISTORY_COLOR, alpha=Plotly.ALPHA)
         plt.plot(test.y, label="Real (test)", color=Plotly.REAL_COLOR, alpha=Plotly.ALPHA)
@@ -149,11 +150,15 @@ class Plotly():
             plt.plot(x, y_2, label="Possible values: AVG(previous years)", color=Plotly.CONFIDENCE_INTERVAL_COLOR)
             legend.append("Likely values (average of previous years)")
 
+            likely_mae, likely_rmse, likely_acc = Plotly.print_stats(y_2, predictions[-len(y_2):], info="Likely values (average of previous years)", return_stats=True)
+
         Plotly._show_texts()
         Plotly.zoom(config, predictions)
 
         plt.legend(legend, loc="best")
         plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
+        #plt.draw()
+        #return mae, rmse, acc, likely_mae, likely_rmse, likely_acc
         plt.show()
 
     @staticmethod
@@ -162,6 +167,7 @@ class Plotly():
         train, test = config.train, config.test
         real = train.y.values[len(train) - len(predictions):len(train)]
         mae, rmse, acc = Plotly.print_stats(real, predictions, info="One-step Forecast:", return_stats=True)
+        mae_ms, rmse_ms, acc_ms = 0., 0., 0.
 
         legend = list(["Real", "One-step Forecast"])
 
@@ -184,6 +190,8 @@ class Plotly():
         Plotly._show_texts()
         plt.legend(legend, loc="best")
         plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
+        #plt.draw()
+        #return mae, rmse, acc,  mae_ms, rmse_ms, acc_ms
         plt.show()
 
     @staticmethod
@@ -243,6 +251,7 @@ class Plotly():
         plt.ylabel("loss")
         plt.xlabel("epoch")
         plt.legend(["train", "test"], loc="brst")
+        plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
         plt.show()
 
     @staticmethod
@@ -278,5 +287,26 @@ class Plotly():
         # Partial Autocorrelation
         plot_pacf(config.all.y, lags=365, title="Broj soba")
         # p = 14
+        plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
+        plt.show()
+
+    @staticmethod
+    def plot_model_stats(stats, metric="test_mae", sequentially=True):
+
+        legend = list()
+        for i, g in enumerate(stats[stats.sequentially == sequentially].groupby(["model"])):
+
+            model_name = g[0]
+            model_stats = g[1].sort_values("version")
+
+            plt.plot(model_stats.version.values, model_stats[metric].values, color=Plotly.COLOR_PALETTE[i])
+
+            #plt.text(max(model_stats.version.values)+1, model_stats[metric].values[-1], model_name, color=Plotly.COLOR_PALETTE[i])
+            legend.append(model_name)
+
+        plt.title("Model statistics (sequentially: {0}, metric: {1})".format(str(sequentially).lower(), metric))
+        plt.xlabel("Version")
+        plt.ylabel("Metric value")
+        plt.legend(legend, loc="best")
         plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
         plt.show()

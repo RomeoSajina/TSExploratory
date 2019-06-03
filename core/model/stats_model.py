@@ -10,9 +10,9 @@ class ARIMAModelWrapper(BaseModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        self.p = 14
+        self.p = 5
         self.d = 0
-        self.q = 14
+        self.q = 5
         self._model = None
 
     def adfuller_test(self):
@@ -69,7 +69,9 @@ class ARIMAModelWrapper(BaseModelWrapper):
         predictions = self.model.fittedvalues  # ILI self.model.predict(start=0, end=len(config.train) - 1, dynamic=False)
 
         # lag = model_fit.model.order[0] # 14, model_fit.model.k_ma
-        lag = 14
+        #lag = 14
+        lag = self.p if self.p > self.q else self.q
+
         # dynamic=True => Recursive Multi-step forecast
         predictions_multistep = self.model.predict(start=lag, end=len(self.config.train) - 1, dynamic=True)
         predictions_multistep = np.concatenate([np.zeros(lag), predictions_multistep])
@@ -96,6 +98,8 @@ class ARMAModelWrapper(ARIMAModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
+        self.p = 5
+        self.q = 5
 
     def create_model(self):
         self._model = ARMA(self.config.train.y.values, order=(self.p, self.q))
@@ -104,33 +108,20 @@ class ARMAModelWrapper(ARIMAModelWrapper):
         self.model = self._model.fit(trend='nc')
         #print(self.model.summary())
 
-    """
-    def load(self):
-        self.model = ARMAResults.load(self.config.base_dir + "models/final/ARMA.pkl")
-
-    def save(self):
-        self.model.save(self.config.base_dir + "models/final/ARMA.pkl")
-    """
-
 
 class ARModelWrapper(ARIMAModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
         self.q = 0
-    """
-    def load(self):
-        self.model = ARMAResults.load(self.config.base_dir + "models/final/AR.pkl")
-
-    def save(self):
-        self.model.save(self.config.base_dir + "models/final/AR.pkl")
-    """
+        self.p = 9
 
 
 class MAModelWrapper(ARIMAModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
+        self.q = 25
         self.p = 0
 
 
@@ -138,6 +129,8 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
+        self.p = 9
+        self.q = 25
         # m = 1 suggests a yearly seasonal cycle
         # m = 1 suggests a monthly seasonal cycle
         self.m = 12
@@ -157,10 +150,6 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
     def load(self):
         #self.model = SARIMAXResults.load(self.config.base_dir + "models/final/SARIMAX.pkl")
         self.model = SARIMAXResults.load(self._build_model_file_name())
-    """
-    def save(self):
-        self.model.save(self.config.base_dir + "models/final/SARIMAX.pkl")
-    """
 
 
 class UnobservedComponentsModelWrapper(ARIMAModelWrapper):
@@ -174,10 +163,3 @@ class UnobservedComponentsModelWrapper(ARIMAModelWrapper):
     def fit_model(self, refitting=True):
         self.model = self._model.fit(maxiter=1000, disp=False)
         #print(self.model.summary())
-    """
-    def load(self):
-        self.model = SARIMAXResults.load(self.config.base_dir + "models/final/UnobservedComponents.pkl")
-
-    def save(self):
-        self.model.save(self.config.base_dir + "models/final/UnobservedComponents.pkl")
-    """
