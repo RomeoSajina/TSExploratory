@@ -6,6 +6,7 @@ import matplotlib
 import random
 from core import Config
 from core import Plotly
+import pickle
 
 
 class DataFactory:
@@ -38,10 +39,35 @@ class DataFactory:
     @staticmethod
     def load_ts(end_date=None, target_date=None):
 
+        if target_date is None:
+            target_date = datetime.datetime(2018, 7, 1)
+
+        if end_date is None:
+            end_date = datetime.datetime(2018, 5, 3)
+
+        temp_file_path = Config.base_dir() + ".temp/config_" + end_date.strftime("%d_%m_%Y") + "_" + target_date.strftime("%d_%m_%Y") + ".pkl"
+
+        def load_from_temp():
+            with open(temp_file_path, 'rb') as input:
+                return pickle.load(input)
+
+        def save_to_temp(c):
+            import os
+            if not os.path.exists(temp_file_path.split("config")[0]):
+                os.mkdir(temp_file_path.split("config")[0])
+
+            with open(temp_file_path, 'wb') as output:
+                pickle.dump(c, output, pickle.HIGHEST_PROTOCOL)
+
         def load_data():
             return pd.read_csv(Config.base_dir() + "data/reservations.csv",
                                parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO"],
                                low_memory=False)
+        try:
+            return load_from_temp()
+        except:
+            pass
+
         try:
             data = load_data()
         except FileNotFoundError:
@@ -51,12 +77,6 @@ class DataFactory:
         data.DATUM_OD = data.DATUM_OD.dt.normalize()
         data.DATUM_DO = data.DATUM_DO.dt.normalize()
         data.DATUM_KREIRANJA = data.DATUM_KREIRANJA.dt.normalize()
-
-        if target_date is None:
-            target_date = datetime.datetime(2018, 7, 1)
-
-        if end_date is None:
-            end_date = datetime.datetime(2018, 5, 3)
 
         min_date = datetime.datetime(2015, 7, 1)
         max_date = target_date
@@ -95,8 +115,10 @@ class DataFactory:
 
         ts = ts.set_index("X", drop=True)
 
-        #return ts, min_date, end_date, target_date
-        return Config.build(ts, min_date, end_date, target_date)
+        config = Config.build(ts, min_date, end_date, target_date)
+        save_to_temp(config)
+
+        return config
 
     @staticmethod
     def load_ts_in_range(start_date, end_date, diff_between):
