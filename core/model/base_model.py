@@ -141,6 +141,16 @@ class BaseModelWrapper(ABC):
     def _build_model_file_name(self):
         return self.config.base_dir + "models/final/" + self._build_file_name() + ".pkl"
 
+    def save_train_figure(self):
+        self.__save_figure("train")
+
+    def save_prediction_figure(self):
+        self.__save_figure("prediction")
+
+    def __save_figure(self, info):
+        model_info = self.__class__.__name__.replace("ModelWrapper", "") + "_" + info
+        name = self.config.base_dir + "figures/models/" + model_info
+        Plotly.savefig(name + ".png", model_info)
     """
     def _construct_file_name(self):
         name = self.config.base_dir + "models/final/" + self.__class__.__name__.replace("ModelWrapper", "")

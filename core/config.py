@@ -18,16 +18,6 @@ class Config:
         self.target_date = datetime.datetime(2018, 7, 1)
         self._scaler = MinMaxScaler(feature_range=(0, 1))
 
-        """
-        Some ideas on the size and nature of this input include:
-
-        All prior days, up to years worth of data.
-        The prior seven days.
-        The prior two weeks.
-        The prior one month.
-        The prior one year.
-        The prior week and the week to be predicted from one year ago.
-        """
         self.n_steps = 30
         self.n_outputs = 1
 
@@ -39,24 +29,6 @@ class Config:
         self.gaps = [60, 30, 7]
         self.cddm = None #AlwaysConceptDriftDetectionMethod()# IgnoreConceptDriftDetectionMethod()# EarlyConceptDriftDetectionMethod()
         self.verbose = 2
-
-        """
-        EarlyStopping(monitor='loss',
-                      patience=200,
-                      min_delta=0,
-                      verbose=self.verbose,
-                      restore_best_weights=True),
-        """
-        """
-        self.nn_fit_callbacks = [
-            EarlyStoppingAtMinLoss(monitor='loss',
-                                   patience=100,
-                                   min_delta=0,
-                                   verbose=self.verbose,
-                                   restore_best_weights=False,
-                                   margin_loss=5e-6),
-            TerminateOnNaN()]
-        """
         self.base_dir = Config.base_dir()
         self.version = 1
         self.margin_loss = 5e-4
@@ -134,20 +106,6 @@ class Config:
         self._test = test
         self._all = pd.concat([train, test])
 
-    """
-    @property
-    def nn_fit_callbacks(self):
-        callbacks = [
-            EarlyStoppingAtMinLoss(monitor='loss',
-                                   patience=50,
-                                   min_delta=0, #1e-5,
-                                   verbose=self.verbose,
-                                   restore_best_weights=True,
-                                   margin_loss=5e-4),
-            TerminateOnNaN()]
-
-        return callbacks
-    """
     def concept_is_drifting(self, new_values: pd.DataFrame, predictions: list):
 
         # 'new_values' are from test set and not contained in train set,
@@ -172,7 +130,6 @@ class Config:
         newC.end_date = self.end_date
         newC.min_date = self.min_date
         newC.cddm = self.cddm
-        #newC.nn_fit_callbacks = self.nn_fit_callbacks
         newC.verbose = self.verbose
         newC.base_dir = self.base_dir
         newC.n_outputs = self.n_outputs
@@ -198,6 +155,15 @@ class Config:
 
 # Metadata about diferent versions of models
 class Metadata:
+
+    """
+    Some ideas on the size and nature of input include:
+
+    All prior days, up to years worth of data. TO BE IMPLEMENTED...
+    The prior 60 days (predicting one or multiple days).
+    The prior 300 days (predicting one or multiple days).
+    The prior week and the week to be predicted from one year ago. TO BE IMPLEMENTED...
+    """
 
     def __init__(self, version, n_steps, n_outputs, margin_loss):
         self.version = version
