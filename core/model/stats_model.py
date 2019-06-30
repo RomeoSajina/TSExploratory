@@ -1,12 +1,14 @@
-from core.model.base_model import BaseModelWrapper
+from core.model.base_model import StatsBaseModelWrapper
 import statsmodels.api as sm
 from statsmodels.tsa.arima_model import ARMA, ARIMA, ARIMAResults, ARMAResults
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults, SARIMAX
 from core.config import Config
 import numpy as np
+import pandas as pd
+import datetime
 
 
-class ARIMAModelWrapper(BaseModelWrapper):
+class ARIMAModelWrapper(StatsBaseModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
@@ -33,21 +35,23 @@ class ARIMAModelWrapper(BaseModelWrapper):
         #print(self.model.summary())
 
     def predict(self, days=None, return_confidence_interval=False):
+        return self._predict(days, return_confidence_interval=return_confidence_interval)
 
-        if return_confidence_interval:
-            return self._predict(days), None #TODO: implement confidence interval
-        else:
-            return self._predict(days)
-
-    def _predict(self, days=None):
+    def _predict(self, days=None, return_confidence_interval=False):
 
         if days is None:
             days = (self.config.target_date - self.config.end_date).days + 1
 
         max_end = len(self.config.train) + len(self.config.test)
+        conf_int = None
 
         try:
             predictions = self.model.predict(start=max_end - days, end=max_end - 1, dynamic=True) # Error if prediction with gap in train data (start>model.nobs)
+
+            if return_confidence_interval:
+                forecast, fcasterr, conf_int = self.model.forecast(steps=days, alpha=1.0 - self._confidence)
+                predictions = forecast
+
         except:
             if self.config.verbose > 0:
                 print("Exception when prediction: " + str(self.model))
@@ -61,6 +65,9 @@ class ARIMAModelWrapper(BaseModelWrapper):
 
         # Can't be negative
         predictions[predictions < 0] = 0
+
+        if return_confidence_interval:
+            return predictions, conf_int
 
         return predictions
 
@@ -92,6 +99,9 @@ class ARIMAModelWrapper(BaseModelWrapper):
     def save(self):
         #self.model.save(self.config.base_dir + "models/final/ARIMA.pkl")
         self.model.save(self._build_model_file_name())
+
+    def n_params(self):
+        return 0 if self.model is None else len(self.model.params)
 
 
 class ARMAModelWrapper(ARIMAModelWrapper):
@@ -129,11 +139,9 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        self.p = 9
-        self.q = 25
-        # m = 1 suggests a yearly seasonal cycle
-        # m = 1 suggests a monthly seasonal cycle
-        self.m = 12
+        self.p = 1
+        self.q = 1
+        self.m = 365
 
     def create_model(self):
         self._model = SARIMAX(self.config.train.y.values,
@@ -144,12 +152,56 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
                               enforce_invertibility=False)
 
     def fit_model(self, refitting=True):
-        self.model = self._model.fit(maxiter=1000, disp=False)
+
+        try:
+
+            self.model = self._model.fit(maxiter=1000, disp=False)
+
+        except Exception as e:
+
+            if self.config.verbose > 0:
+                print("Exception: " + str(e))
+                self.extend_dataset()
+                self.create_model()
+                self.model = self._model.fit(maxiter=1000, disp=False)
+
+            else:
+                raise e
+
         #print(self.model.summary())
 
+    def save(self):
+        from sklearn.externals import joblib
+        joblib.dump(self.model, self._build_model_file_name().replace(".pkl", ".sav"))
+
     def load(self):
-        #self.model = SARIMAXResults.load(self.config.base_dir + "models/final/SARIMAX.pkl")
-        self.model = SARIMAXResults.load(self._build_model_file_name())
+        #self.model = SARIMAXResults.load(self._build_model_file_name())
+        from sklearn.externals import joblib
+        self.model = joblib.load(self._build_model_file_name().replace(".pkl", ".sav"))
+
+    def extend_dataset(self):
+
+        if self.config.verbose > 1:
+            print("Extending dataset....")
+
+        m = min(self.config.all.index)
+
+        d = [m - datetime.timedelta(x) for x in reversed(range(1096))]
+
+        a = self.config.all
+
+        t = pd.DataFrame(dict({"X": d, "y": self.config.all.y.values}), columns=["X", "y"])
+        t.set_index("X", inplace=True)
+
+        a = t.append(a)
+
+        #self.config.train = a[0:-60]
+        #self.config.test = a[-60:]
+        #self.config.all = pd.concat([self.config.train, self.config.test])
+        self.config.set_train_and_test(a[0:-60], a[-60:])
+
+        if self.config.verbose > 1:
+            print("Extended dataset: " + self.config.all.index[0].strftime("%d_%m_%Y") + " - " + self.config.all.index[-1].strftime("%d_%m_%Y"))
 
 
 class UnobservedComponentsModelWrapper(ARIMAModelWrapper):

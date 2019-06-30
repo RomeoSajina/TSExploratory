@@ -8,9 +8,6 @@ from core.plotly import Plotly
 
 class BaseModelWrapper(ABC):
 
-    #TODO: Box-Ljung test for residuals, if p-values are relatively large (cca 0.5), we can conclude that the residuals are not distinguishable from a white noise series.
-    # Athanasopoulos str(75)
-
     def __init__(self, config: Config):
         super().__init__()
         # Private config
@@ -61,6 +58,89 @@ class BaseModelWrapper(ABC):
     def predict_multiple(self):
         return self._predict_multiple()
 
+    def predict_multiple2(self):
+
+        """
+        PSEUDO:
+
+            foreach gap:
+
+                if there exist a previous gap:
+
+                    new_values = train[-prev_gap:]
+
+                    # Prepare datasets to be like previous
+                    train, test = shrinked set without new values, extended set with new values
+
+                    old_data_predictions = predict the same range as new values
+
+                    if concept is drifting:
+                        retrain the model
+
+                predictions = predict the next range
+
+                train, test = extended set with new values, shrinked test set without new values
+
+        """
+
+        predictions = list()
+
+        prev_gap = None
+
+        for gap in self.config.gaps:
+
+            train, test = self.config.train_and_test
+
+            if prev_gap is not None:
+
+                new_values = train[-prev_gap:]
+
+                if self.config.verbose > 0:
+                    print("New values available after: " + str(new_values.index[0].strftime("%d.%m.%Y")) + ", size: " + str(len(new_values)))
+
+                train_prev, test_prev = train[:-prev_gap], pd.concat([train[-prev_gap:], test])
+
+                self.config.set_train_and_test(train_prev, test_prev)
+
+                old_data_predictions = self.predict(prev_gap)
+
+                if self.config.verbose > 1:
+                    print("Predictions of the range of new values with start date: " + str(new_values.index[0].strftime("%d.%m.%Y")) +
+                          ", size: " + str(len(old_data_predictions)) + ", gap: " + str(prev_gap))
+
+                if self.config.concept_is_drifting(new_values, old_data_predictions):
+                    # Reset train and test data
+                    self.config.set_train_and_test(train, test)
+
+                    #if self.config.verbose > 1:
+                    #    print("Initiating retraining, last sync date: " + self.config.min_date.strftime("%d.%m.%Y"))
+
+                    self.fit_model(refitting=True)
+
+                # Set new margin where system agreed to be up-to-date
+                self.config.min_date = self.config.train.index[-1]
+
+                # Reset train and test data
+                self.config.set_train_and_test(train, test)
+
+            # Predict new range
+            preds = self.predict(gap)
+
+            predictions.append(dict({"gap": gap, "predictions": preds}))
+
+            # Dividie by new gap and set new history and future (train, test)
+            margin = len(train) + gap
+            train_l, test_l = self.config.all[:margin], self.config.all[margin:]
+            self.config.set_train_and_test(train_l, test_l)
+
+            # Notify new predictions
+            self.config.notify_new_predictions(preds)
+
+            # Set gap for next round
+            prev_gap = gap
+
+        return predictions
+
     def _predict_multiple(self):
 
         train, test = self.__config.train_and_test
@@ -100,7 +180,6 @@ class BaseModelWrapper(ABC):
                     #self.config.set_train_and_test(train_l, test_l)
                     #self.config = copy_of_config
                     self.fit_model(refitting=True)
-            #else
 
             # Use the config if changed
             #self.config = copy_of_config
@@ -126,14 +205,30 @@ class BaseModelWrapper(ABC):
         predictions = self.predict_multiple()
         Plotly.plot_multiple_predictions(config=self.config, mtpl_predictions=predictions)
 
+    def plot_predict_multiple2(self):
+        predictions = self.predict_multiple2()
+        Plotly.plot_multiple_predictions2(config=self.config, mtpl_predictions=predictions)
+
     def plot_train(self):
         predictions, predictions_multistep = self.predict_on_train()
         Plotly.plot_train_predictions(config=self.config, predictions=predictions, predictions_multistep=predictions_multistep)
+
+    def plot_multiple_and_train(self):
+        predictions, predictions_multistep = self.predict_on_train()
+        Plotly.plot_multiple_and_train(config=self.config,
+                                       predictions=predictions, predictions_multistep=predictions_multistep, train_title=self._build_file_name() + "_train",
+                                       mtpl_predictions=self.predict_multiple(), mtpl_title=self._build_file_name() + "_prediction")
 
     def plot_diagnostics(self):
         # https://machinelearningmastery.com/visualize-time-series-residual-forecast-errors-with-python/
         # TODO: napravit kao checkresiduals u R-u
         pass
+
+    def n_params(self):
+        return 0
+
+    def info(self):
+        return self.__class__.__name__.replace("ModelWrapper", "")
 
     def _build_file_name(self):
         return self.__class__.__name__.replace("ModelWrapper", "")
@@ -147,10 +242,13 @@ class BaseModelWrapper(ABC):
     def save_prediction_figure(self):
         self.__save_figure("prediction")
 
-    def __save_figure(self, info):
+    def save_figure(self, info="", device="svg"):
+        self.__save_figure(info, device)
+
+    def __save_figure(self, info, device="png"):
         model_info = self.__class__.__name__.replace("ModelWrapper", "") + "_" + info
         name = self.config.base_dir + "figures/models/" + model_info
-        Plotly.savefig(name + ".png", model_info)
+        Plotly.savefig(name + "." + device, model_info)
     """
     def _construct_file_name(self):
         name = self.config.base_dir + "models/final/" + self.__class__.__name__.replace("ModelWrapper", "")
@@ -161,6 +259,12 @@ class BaseModelWrapper(ABC):
         print("Save fig: " + name + ".png")
         Plotly.savefig(name + ".png")
     """
+
+
+class StatsBaseModelWrapper(BaseModelWrapper):
+
+    def __init__(self, config: Config):
+        super().__init__(config)
 
 
 # Naive forecast

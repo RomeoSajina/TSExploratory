@@ -115,7 +115,7 @@ class DataFactory:
 
         ts = ts.set_index("X", drop=True)
 
-        config = Config.build(ts, min_date, end_date, target_date)
+        config = Config.build(ts, end_date, target_date)
         save_to_temp(config)
 
         return config
@@ -188,9 +188,9 @@ class DataFactory:
             legend.append(str(year))
 
         plt.legend(legend, loc="best")
-        plt.xlabel("Broj dana")
+        plt.xlabel("Broj dana unatrag")
         plt.ylabel("Broj soba")
-        plt.title("Kreiranje rezervacija soba za " + target_date.strftime("%d.%m."))
+        plt.title("Rezervacije soba za " + target_date.strftime("%d.%m."))
 
     @staticmethod
     def plot_for_target_dates(target_dates=[datetime.datetime(2018, 7, 1)], x_is_distance=True):
@@ -229,9 +229,9 @@ class DataFactory:
             legend.append(td.strftime("%d.%m"))
 
         plt.legend(legend, loc="best")
-        plt.xlabel("Broj dana")
+        plt.xlabel("Broj dana unatrag" if x_is_distance else "Datum")
         plt.ylabel("Broj soba")
-        plt.title("Prosječna kreiranja rezervacija soba za datume (godine: 2016-2018)")
+        plt.title("Prosječne rezervacije soba za datume (godine: 2016-2018)")
         plt.rcParams["figure.figsize"] = Plotly.FIGURE_SIZE
         plt.show()
 
@@ -311,6 +311,7 @@ class DataFactory:
         df = pd.DataFrame(elem_list)
         df.to_csv(Config.base_dir() + "data/reservations_aggregated.csv", sep=";")
 
+    """
     @staticmethod
     def load_stats():
         return pd.read_csv(Config.base_dir() + "data/stats.csv", index_col=0)
@@ -318,6 +319,7 @@ class DataFactory:
     @staticmethod
     def save_stats(stats):
         stats.to_csv(Config.base_dir() + "data/stats.csv")
+    """
 
     """
     DataFactory.plot_yearly()

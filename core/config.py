@@ -1,7 +1,8 @@
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import datetime
-from core.cddm import EarlyConceptDriftDetectionMethod, IgnoreConceptDriftDetectionMethod, AlwaysConceptDriftDetectionMethod
+from core.cddm import *
+#from core.cddm import EarlyConceptDriftDetectionMethod, IgnoreConceptDriftDetectionMethod, AlwaysConceptDriftDetectionMethod
 #from tensorflow.python.keras.callbacks import EarlyStopping, TerminateOnNaN
 #from core.model.callback import EarlyStoppingAtMinLoss
 
@@ -25,9 +26,11 @@ class Config:
         # Za CNN
         self.n_seq = 1 # ne dela mi veci broj
         self.end_date = datetime.datetime(2015, 5, 1)
+
+        # Date on which the system agreed that everything is up to date (model retraining if needed)
         self.min_date = datetime.datetime(2018, 5, 1)
         self.gaps = [60, 30, 7]
-        self.cddm = None #AlwaysConceptDriftDetectionMethod()# IgnoreConceptDriftDetectionMethod()# EarlyConceptDriftDetectionMethod()
+        self.cddm = None
         self.verbose = 2
         self.base_dir = Config.base_dir()
         self.version = 1
@@ -57,7 +60,7 @@ class Config:
         conf.min_date = train.index[1]
 
     @staticmethod
-    def build(ts, min_date, end_date, target_date):
+    def build(ts, end_date, target_date):
 
         conf = Config()
         conf._all = ts
@@ -65,7 +68,7 @@ class Config:
         conf._test = ts[end_date:]
         conf.target_date = target_date
         conf.end_date = end_date
-        conf.min_date = min_date
+        conf.min_date = end_date
 
         return conf
 
@@ -109,13 +112,27 @@ class Config:
     def concept_is_drifting(self, new_values: pd.DataFrame, predictions: list):
 
         # 'new_values' are from test set and not contained in train set,
-        # also 'predictions' are made by model that is trained on data that doesn't contains 'new_values'
-        is_drifting = self.cddm is not None and self.cddm.is_drifting(self.train, new_values, predictions)
+        # also 'predictions' are made by model that is trained on data that doesn't contains 'new_values',
+        # and predictions are on the same range as new values
+        is_drifting = self.cddm is not None and self.cddm.is_drifting(self, self.train, new_values, predictions)
 
         if self.cddm is not None and self.verbose > 0:
             print("Drifting detected: " + str(is_drifting))
 
         return is_drifting
+
+    def notify_new_predictions(self, predictions: list):
+
+        if self.cddm is not None:
+            self.cddm.notify_new_predictions(predictions)
+
+    def reset(self):
+        self.min_date = self.end_date
+        self.train = self.all[:self.end_date]
+        self.test = self.all[self.end_date:]
+
+        if self.cddm is not None:
+            self.cddm.reset()
 
     def copy(self):
         newC = Config()

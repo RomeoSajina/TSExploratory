@@ -16,6 +16,7 @@ from core.data_factory import DataFactory
 import pandas as pd
 import math
 import numpy as np
+import scipy.stats
 import random as rn
 from abc import abstractmethod
 import datetime
@@ -93,40 +94,7 @@ class NNBaseModelWrapper(BaseModelWrapper):
     def fit_model(self, refitting=False):
 
         if refitting:
-
-            self.init_callbacks()
-
-            dummy_config = self.config.copy()
-
-            if self.config.verbose > 0:
-                print("Refitting NN model. End_date: " +
-                      self.config.end_date.strftime("%d.%m.%Y") +
-                      ", size of values after it: " + str(len(self.config.train[self.config.end_date:])))
-
-            new_min_date = self.config.end_date - datetime.timedelta(days=self.config.n_steps)
-
-            # TODO: filtrirat samo najnovije vrijednosti koje model još nije vidio?
-            # npr. kada je gap iz 60 u 30 uzmi tih 30 dana razlike,
-            # ali onda kad je iz 30 u 7 dana uzmi samo tih 23 dana, a ne svih 53
-            dummy_config.train = dummy_config.train[new_min_date:]
-
-            if self.config.verbose > 0:
-                print("New calculated min training date is: "
-                      + new_min_date.strftime("%d.%m.%Y") +
-                      ", size of new values is: " + str(len(dummy_config.train)))
-
-            X, y = self.X_y(dummy_config)
-            # TODO: dotrenirat model sa early-stoping na greški globalnog modela? Npr. stani kada je greška untuar 20% globalne greške
-
-            # Decrease the learning rate
-            K.set_value(self.model.optimizer.lr, self.refitting_lr)
-            self.model.fit(X, y,
-                           epochs=self.epochs/5,
-                           verbose=self.config.verbose,
-                           batch_size=self.batch_size,
-                           callbacks=self.callbacks,
-                           steps_per_epoch=self.steps_per_epoch,
-                           shuffle=False)
+            self._retrain()
         else:
             self._train()
 
@@ -144,15 +112,29 @@ class NNBaseModelWrapper(BaseModelWrapper):
             for r in range(100):
                 vals.append(self._predict(days))
 
-            mean = np.mean(vals, axis=0)
+            means = np.mean(vals, axis=0)
+
+            """
             mn, mx = np.min(vals, axis=0), np.max(vals, axis=0)
 
             if (mn == mx).all():
                 conf_int = None
             else:
                 conf_int = np.array([mn * (2 - self._confidence), mx * self._confidence]).T[0]
+            """
+            # TODO: fix
+            def calc_conf_int(data, confidence):
+                m = scipy.mean(data)
+                h = scipy.stats.sem(data) * scipy.stats.t.ppf((1 + confidence) / 2, len(data) - 1)
+                return m - h,  m + h
 
-            return mean, conf_int
+            vals = np.array(vals)
+            conf_int = list()
+            for i in range(vals.shape[1]):
+                _min, _max = calc_conf_int(vals[:, i, :].flatten(), self._confidence)
+                conf_int.append([_min, _max])
+
+            return means, np.array(conf_int)
 
     def _predict(self, days=None):
         # Recursive Multi-step Forecast
@@ -356,6 +338,46 @@ class NNBaseModelWrapper(BaseModelWrapper):
         self.last_epoch = early_stoping.last_epoch
         #Properties.save(self)
 
+    def _retrain(self):
+
+        self.init_callbacks()
+
+        dummy_config = self.config.copy()
+
+        #if self.config.verbose > 0:
+        #    print("Refitting NN model. End_date: " + self.config.end_date.strftime("%d.%m.%Y") + ", size of values after it: " + str(len(self.config.train[self.config.end_date:])))
+
+        #previous_gap = 60  # TODO:
+        #new_min_date = self.config.end_date - datetime.timedelta(days=self.config.n_steps + previous_gap)
+
+        new_min_date = self.config.min_date - datetime.timedelta(days=self.config.n_steps + 365) # TODO:....
+
+        # TODO: filtrirat samo najnovije vrijednosti koje model još nije vidio?
+        # npr. kada je gap iz 60 u 30 uzmi tih 30 dana razlike,
+        # ali onda kad je iz 30 u 7 dana uzmi samo tih 23 dana, a ne svih 53
+        dummy_config.train = dummy_config.train[new_min_date:]
+
+        if self.config.verbose > 0:
+           print("Refitting NN model. min_date: " + self.config.min_date.strftime("%d.%m.%Y") + ", size of values after it: " + str(len(dummy_config.train[self.config.min_date:])))
+
+        #if self.config.verbose > 0:
+        #    print("New calculated min training date is: " + new_min_date.strftime("%d.%m.%Y") + ", size of new values is: " + str(len(dummy_config.train)))
+
+        X, y = self.X_y(dummy_config)
+
+        # Decrease the learning rate
+        K.set_value(self.model.optimizer.lr, self.refitting_lr)
+        self.model.fit(X, y,
+                       epochs=int(self.epochs / 5),
+                       verbose=0,#self.config.verbose,
+                       batch_size=self.batch_size,
+                       callbacks=self.callbacks,
+                       steps_per_epoch=self.steps_per_epoch,
+                       shuffle=False)
+
+        # In a perfect world we would save latest model here
+        # model.save_latest()
+
     def load(self):
         #custom_objects={"tf": tf}
         self.model = load_model(self._build_model_file_name(), custom_objects={"RandomDropout": RandomDropout})
@@ -363,6 +385,9 @@ class NNBaseModelWrapper(BaseModelWrapper):
     def save(self):
         Properties.save(self)
         self.model.save(self._build_model_file_name())
+
+    def n_params(self):
+        return 0 if self.model is None else self.model.count_params()
 
     def info(self):
         return self.__class__.__name__.replace("ModelWrapper", "") + "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version)
@@ -936,6 +961,30 @@ class CNNModelWrapper(NNBaseModelWrapper):
         return x.reshape((1, self.config.n_steps, self.config.n_features))
 
 
+class AutoencoderCNNModelWrapper(CNNModelWrapper):
+    """
+    Done!
+    """
+    def create_model(self):
+
+        model = Sequential()
+
+        model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
+        model.add(BatchNormalization())
+        model.add(MaxPooling1D(pool_size=2))
+        model.add(Flatten())
+        model.add(Dropout(0.2))
+        model.add(Dense(100, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(500, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(self.config.n_outputs))
+
+        model.compile(optimizer=self.optimizer, loss=self.loss_metric)
+
+        self.model = model
+
+
 class AutoencoderRandomDropoutCNNModelWrapper(CNNModelWrapper):
     """
     Done!
@@ -1002,6 +1051,34 @@ class MultiCNNModelWrapper(NNBaseModelWrapper):
 
     def _reshape_predict_input(self, x):
         return x.reshape((1, self.config.n_steps, self.config.n_features))
+
+
+class AutoencoderMultiCNNModelWrapper(MultiCNNModelWrapper):
+    """
+    Done!
+    """
+    def create_model(self):
+
+        model = Sequential()
+        model.add(Conv1D(filters=64, kernel_size=15, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
+        model.add(BatchNormalization())
+        model.add(Conv1D(filters=32, kernel_size=3, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling1D(pool_size=2))
+        model.add(Conv1D(filters=16, kernel_size=2, activation='relu'))
+        model.add(BatchNormalization())
+        model.add(MaxPooling1D(pool_size=2))
+        model.add(Flatten())
+        model.add(Dropout(0.2))
+        model.add(Dense(100, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(500, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(self.config.n_outputs))
+
+        model.compile(optimizer=self.optimizer, loss=self.loss_metric)
+
+        self.model = model
 
 
 class AutoencoderRandomDropoutMultiCNNModelWrapper(MultiCNNModelWrapper):

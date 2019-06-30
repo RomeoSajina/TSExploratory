@@ -1,6 +1,7 @@
 from core.config import Config, Metadata
 from core.plotly import Plotly
 from core.data_factory import DataFactory
+from core.stats_collector import StatsCollector
 
 from core.model.base_model import PersistentModelWrapper
 from core.model.base_model import SeasonalPersistentModelWrapper
@@ -24,6 +25,8 @@ from core.model.nn_model import CNNModelWrapper
 from core.model.nn_model import MultiCNNModelWrapper
 from core.model.nn_model import MLPModelWrapper
 from core.model.nn_model import AutoencoderMLPModelWrapper
+from core.model.nn_model import AutoencoderMultiCNNModelWrapper
+from core.model.nn_model import AutoencoderCNNModelWrapper
 from core.model.nn_model import AutoencoderRandomDropoutMLPModelWrapper
 from core.model.nn_model import RandomDropoutLSTMModelWrapper
 from core.model.nn_model import AutoencoderRandomDropoutBidirectionalLSTMModelWrapper
