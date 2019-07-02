@@ -610,7 +610,7 @@ class AutoencoderRandomDropoutMLPModelWrapper(MLPModelWrapper):
         self.model = model
 
 
-class AutoencoderRandomDropoutMLPLSTMModelWrapper(NNBaseModelWrapper):
+class AutoencoderMLPLSTMModelWrapper(NNBaseModelWrapper):
     """
         Done!
     """
@@ -618,16 +618,16 @@ class AutoencoderRandomDropoutMLPLSTMModelWrapper(NNBaseModelWrapper):
 
         model = Sequential()
         model.add(Dense(500, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
-        model.add(RandomDropout())
+        model.add(Dropout(0.2))
         model.add(Dense(300, activation='relu'))
-        model.add(RandomDropout())
+        model.add(Dropout(0.2))
         model.add(Dense(100, activation='relu'))
-        model.add(RandomDropout())
+        model.add(Dropout(0.2))
         model.add(LSTM(100, activation="relu", return_sequences=True))
         model.add(Dense(300, activation='relu'))
-        model.add(RandomDropout(0.2))
+        model.add(Dropout(0.2))
         model.add(Dense(500, activation='relu'))
-        model.add(RandomDropout())
+        model.add(Dropout(0.2))
         model.add(Flatten())
         model.add(Dense(self.config.n_outputs))
 
@@ -642,7 +642,59 @@ class AutoencoderRandomDropoutMLPLSTMModelWrapper(NNBaseModelWrapper):
         return x.reshape((x.shape[0], x.shape[1], self.config.n_features))
 
 
-class AutoencoderRandomDropoutMLPGRUModelWrapper(AutoencoderRandomDropoutMLPLSTMModelWrapper):
+class AutoencoderRandomDropoutMLPLSTMModelWrapper(AutoencoderMLPLSTMModelWrapper):
+    """
+        Done!
+    """
+    def create_model(self):
+
+        model = Sequential()
+        model.add(Dense(500, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
+        model.add(RandomDropout())
+        model.add(Dense(300, activation='relu'))
+        model.add(RandomDropout())
+        model.add(Dense(100, activation='relu'))
+        model.add(RandomDropout())
+        model.add(LSTM(100, activation="relu", return_sequences=True))
+        model.add(Dense(300, activation='relu'))
+        model.add(RandomDropout())
+        model.add(Dense(500, activation='relu'))
+        model.add(RandomDropout())
+        model.add(Flatten())
+        model.add(Dense(self.config.n_outputs))
+
+        model.compile(optimizer=self.optimizer, loss=self.loss_metric)
+
+        self.model = model
+
+
+class AutoencoderMLPGRUModelWrapper(AutoencoderMLPLSTMModelWrapper):
+    """
+        Done!
+    """
+    def create_model(self):
+
+        model = Sequential()
+        model.add(Dense(500, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
+        model.add(Dropout(0.2))
+        model.add(Dense(300, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(100, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(GRU(100, activation="relu", return_sequences=True))
+        model.add(Dense(300, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(500, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Flatten())
+        model.add(Dense(self.config.n_outputs))
+
+        model.compile(optimizer=self.optimizer, loss=self.loss_metric)
+
+        self.model = model
+
+
+class AutoencoderRandomDropoutMLPGRUModelWrapper(AutoencoderMLPGRUModelWrapper):
     """
         Done!
     """
@@ -657,7 +709,7 @@ class AutoencoderRandomDropoutMLPGRUModelWrapper(AutoencoderRandomDropoutMLPLSTM
         model.add(RandomDropout())
         model.add(GRU(100, activation="relu", return_sequences=True))
         model.add(Dense(300, activation='relu'))
-        model.add(RandomDropout(0.2))
+        model.add(RandomDropout())
         model.add(Dense(500, activation='relu'))
         model.add(RandomDropout())
         model.add(Flatten())

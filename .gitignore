@@ -116,7 +116,12 @@ dmypy.json
 test/
 
 old/
-models/
+models/final/*.pkl
+models/final/*.h5
+models/final/*.sav
+models/*.pkl
+models/*.h5
+models/*.sav
 figures/
 data/unused/
 data/reservations_all.csv
