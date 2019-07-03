@@ -27,6 +27,8 @@ from core.model.nn_model import MLPModelWrapper
 from core.model.nn_model import AutoencoderMLPModelWrapper
 from core.model.nn_model import AutoencoderMultiCNNModelWrapper
 from core.model.nn_model import AutoencoderCNNModelWrapper
+from core.model.nn_model import AutoencoderMLPGRUModelWrapper
+from core.model.nn_model import AutoencoderMLPLSTMModelWrapper
 from core.model.nn_model import AutoencoderRandomDropoutMLPModelWrapper
 from core.model.nn_model import RandomDropoutLSTMModelWrapper
 from core.model.nn_model import AutoencoderRandomDropoutBidirectionalLSTMModelWrapper

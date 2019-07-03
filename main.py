@@ -263,7 +263,9 @@ ALL = [
     [BidirectionalLSTMModelWrapper, 4],
     [AutoencoderMLPModelWrapper, 12],
     [AutoencoderCNNModelWrapper, 7],
-    [AutoencoderMultiCNNModelWrapper, 3]
+    [AutoencoderMultiCNNModelWrapper, 3],
+    [AutoencoderMLPGRUModelWrapper, 7],
+    [AutoencoderMLPLSTMModelWrapper, 12]
 ]
     #SARIMAXModelWrapper,
 
@@ -416,5 +418,4 @@ for model_class in ALL:
         StatsCollector.collect_mtpl_model_stats(config, model)
 
         tf.keras.backend.clear_session()
-        import gc
-        gc.collect()
+

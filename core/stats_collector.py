@@ -186,9 +186,27 @@ class StatsCollector:
         # ERR = MAE + (MAE * | 1 - fa |)
 
         """
+        stats = stats[stats.model.str.contains("RandomDropout") == False]
+        
         stats.sort_values("test_avg_mae").loc[:, ["code", "test_avg_mae"]]
         
         stats[:][["model", "test_avg_mae", "test_avg_fa"]]
+
+        
+        config.verbose=0
+        for model_class in ALL:
+
+            model_ver = 1
+        
+            if isinstance(model_class, list):
+                model_ver = model_class[1]
+                model_class = model_class[0]
+        
+            config.apply_metadata(getattr(Metadata, "version_" + str(model_ver))())
+            model = model_class(config)
+        
+            print(stats[stats.code == model.info()][:][["model", "version", "test_avg_mae", "test_avg_fa"]].values)
+
         
         print("version".ljust(10, ' '), "model".ljust(30, ' '), "test_avg_mae".ljust(20, ' '), "test_avg_fa".ljust(20, ' '), "test_error".ljust(20, ' '))
         for index, row in stats.iterrows():
