@@ -10,7 +10,7 @@ class Properties:
     LAST_EPOCH_KEY = "last_epoch"
 
     @staticmethod
-    def _build_section_name(model): #: NNBaseModelWrapper
+    def _build_section_name(model):
         return model.__class__.__name__.replace("ModelWrapper", "") + "_seq_" + str(model.train_sequentially) + "_ver_" + str(model.version)
 
     @staticmethod
@@ -18,7 +18,7 @@ class Properties:
         return Config.base_dir() + Properties.FILE_NAME
 
     @staticmethod
-    def load(model): #: NNBaseModelWrapper
+    def load(model):
 
         #model_properties = configparser.ConfigParser()
         model_properties = configparser.ConfigParser({}, collections.OrderedDict)
@@ -37,7 +37,7 @@ class Properties:
             model.last_epoch = int(mp[Properties.LAST_EPOCH_KEY])
 
     @staticmethod
-    def save(model): #: NNBaseModelWrapper
+    def save(model):
 
         #model_properties = configparser.ConfigParser()
         model_properties = configparser.ConfigParser({}, collections.OrderedDict)

@@ -28,10 +28,3 @@ class RandomDropout(Lambda):
         #N = stats.norm(loc=mu, scale=sigma)
 
         return X.rvs(1)[0]
-
-"""
-class RandomDropout(Dropout):
-    
-    def __init__(self, rate, noise_shape=None, seed=None, **kwargs):
-        super(RandomDropout, self).__init__(rate=rate, noise_shape=noise_shape, seed=seed, **kwargs)
-"""

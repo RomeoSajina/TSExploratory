@@ -311,15 +311,6 @@ class DataFactory:
         df = pd.DataFrame(elem_list)
         df.to_csv(Config.base_dir() + "data/reservations_aggregated.csv", sep=";")
 
-    """
-    @staticmethod
-    def load_stats():
-        return pd.read_csv(Config.base_dir() + "data/stats.csv", index_col=0)
-
-    @staticmethod
-    def save_stats(stats):
-        stats.to_csv(Config.base_dir() + "data/stats.csv")
-    """
 
     """
     DataFactory.plot_yearly()

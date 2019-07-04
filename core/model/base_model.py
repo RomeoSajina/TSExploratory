@@ -249,16 +249,6 @@ class BaseModelWrapper(ABC):
         model_info = self.__class__.__name__.replace("ModelWrapper", "") + "_" + info
         name = self.config.base_dir + "figures/models/" + model_info
         Plotly.savefig(name + "." + device, model_info)
-    """
-    def _construct_file_name(self):
-        name = self.config.base_dir + "models/final/" + self.__class__.__name__.replace("ModelWrapper", "")
-        return name
-
-    def save_figure(self):
-        name = self._construct_file_name().split(".")[0]
-        print("Save fig: " + name + ".png")
-        Plotly.savefig(name + ".png")
-    """
 
 
 class StatsBaseModelWrapper(BaseModelWrapper):

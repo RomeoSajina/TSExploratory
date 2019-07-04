@@ -403,11 +403,11 @@ class NNBaseModelWrapper(BaseModelWrapper):
     def save_prediction_figure(self):
         self.__save_figure("prediction")
 
-    def __save_figure(self, info):
+    def __save_figure(self, info, device="png"):
         model_info = self.__class__.__name__.replace("ModelWrapper", "") + "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version) + "_" + info
         name = self.config.base_dir + "figures/models/" + model_info
         #name += "_seq_" + str(self.train_sequentially).lower() + "_ver_" + str(self.version) + "_" + info
-        Plotly.savefig(name + ".png", model_info)
+        Plotly.savefig(name + "." + device, model_info)
 
     @staticmethod
     def split_sequence(sequence, n_steps, n_outputs):
@@ -467,25 +467,6 @@ class NNBaseModelWrapper(BaseModelWrapper):
                 for l in self.model.layers:
                     print(l.name.ljust(20), str(l.input_shape).ljust(20), str(l.output_shape).ljust(20))
 
-    """
-    def plot_predict(self, days=None, show_confidence_interval=True):
-        #predictions = self.predict(days=days)
-        #Plotly.plot_predictions(config=self.config, predictions=predictions)
-        vals = []
-
-        for r in range(100):
-            vals.append(self.predict(days))
-
-        mean = np.mean(vals, axis=0)
-        mn, mx = np.min(vals, axis=0), np.max(vals, axis=0)
-
-        if (mn == mx).all():
-            conf_int = None
-        else:
-            conf_int = np.array([mn * (2-self._confidence), mx * self._confidence]).T[0]
-
-        Plotly.plot_predictions(config=self.config, predictions=mean, conf_int=conf_int)
-    """
     def __contains_random_dropout(self):
         return np.array([isinstance(l, RandomDropout) for l in self.model.layers]).any()
 
@@ -537,9 +518,7 @@ class CustomModelWrapper(NNBaseModelWrapper):
 
 
 class MLPModelWrapper(NNBaseModelWrapper):
-    """
-        Done!
-    """
+
     def _reshape_predict_input(self, x):
         return x.reshape((1, self.config.n_steps))
 
@@ -561,10 +540,7 @@ class MLPModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderMLPModelWrapper(MLPModelWrapper):
-    """
-        Autoencoder - decoder MLP
-        Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -586,10 +562,7 @@ class AutoencoderMLPModelWrapper(MLPModelWrapper):
 
 
 class AutoencoderRandomDropoutMLPModelWrapper(MLPModelWrapper):
-    """
-        Done!
-        Zanimljiv rezultat n_output=7
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -611,9 +584,7 @@ class AutoencoderRandomDropoutMLPModelWrapper(MLPModelWrapper):
 
 
 class AutoencoderMLPLSTMModelWrapper(NNBaseModelWrapper):
-    """
-        Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -643,9 +614,7 @@ class AutoencoderMLPLSTMModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderRandomDropoutMLPLSTMModelWrapper(AutoencoderMLPLSTMModelWrapper):
-    """
-        Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -669,9 +638,7 @@ class AutoencoderRandomDropoutMLPLSTMModelWrapper(AutoencoderMLPLSTMModelWrapper
 
 
 class AutoencoderMLPGRUModelWrapper(AutoencoderMLPLSTMModelWrapper):
-    """
-        Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -695,9 +662,7 @@ class AutoencoderMLPGRUModelWrapper(AutoencoderMLPLSTMModelWrapper):
 
 
 class AutoencoderRandomDropoutMLPGRUModelWrapper(AutoencoderMLPGRUModelWrapper):
-    """
-        Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -721,9 +686,7 @@ class AutoencoderRandomDropoutMLPGRUModelWrapper(AutoencoderMLPGRUModelWrapper):
 
 
 class LSTMModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def __init__(self, config: Config):
         super(LSTMModelWrapper, self).__init__(config)
         self.optimizer = "nadam"
@@ -742,9 +705,7 @@ class LSTMModelWrapper(NNBaseModelWrapper):
 
 
 class RandomDropoutLSTMModelWrapper(LSTMModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -759,9 +720,7 @@ class RandomDropoutLSTMModelWrapper(LSTMModelWrapper):
 
 
 class BidirectionalLSTMModelWrapper(NNBaseModelWrapper):
-    """
-    Done! los model
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -779,9 +738,7 @@ class BidirectionalLSTMModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderRandomDropoutBidirectionalLSTMModelWrapper(BidirectionalLSTMModelWrapper):
-    """
-    Done! los model
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -801,9 +758,7 @@ class AutoencoderRandomDropoutBidirectionalLSTMModelWrapper(BidirectionalLSTMMod
 
 
 class TimeDistributedCNNLSTMModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -827,9 +782,7 @@ class TimeDistributedCNNLSTMModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderRandomDropoutTimeDistributedCNNLSTMModelWrapper(TimeDistributedCNNLSTMModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -851,9 +804,7 @@ class AutoencoderRandomDropoutTimeDistributedCNNLSTMModelWrapper(TimeDistributed
 
 
 class CNNLSTMModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -884,9 +835,7 @@ class CNNLSTMModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderRandomDropoutCNNLSTMModelWrapper(CNNLSTMModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -912,9 +861,7 @@ class AutoencoderRandomDropoutCNNLSTMModelWrapper(CNNLSTMModelWrapper):
 
 
 class AutoencoderCNNLSTMTimeDistributedModelWrapper(CNNLSTMModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
         """
         shape: [samples, timesteps, rows, cols, channels]
@@ -938,9 +885,7 @@ class AutoencoderCNNLSTMTimeDistributedModelWrapper(CNNLSTMModelWrapper):
 
 
 class GRUModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def __init__(self, config: Config):
         super(GRUModelWrapper, self).__init__(config)
         self.optimizer = "nadam"
@@ -960,9 +905,7 @@ class GRUModelWrapper(NNBaseModelWrapper):
 
 
 class RandomDropoutGRUModelWrapper(GRUModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -977,20 +920,8 @@ class RandomDropoutGRUModelWrapper(GRUModelWrapper):
 
 
 class CNNModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
-        """
-        model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add(Flatten())
-        model.add(Dropout(0.2))
-        # model.add(Dense(100, activation='relu'))
-        # model.add(Dropout(0.2))
-        model.add(Dense(50, activation='relu'))
-        model.add(Dense(self.config.n_outputs))
-        """
 
         model = Sequential()
         model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
@@ -1014,9 +945,7 @@ class CNNModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderCNNModelWrapper(CNNModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -1038,9 +967,7 @@ class AutoencoderCNNModelWrapper(CNNModelWrapper):
 
 
 class AutoencoderRandomDropoutCNNModelWrapper(CNNModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -1062,22 +989,8 @@ class AutoencoderRandomDropoutCNNModelWrapper(CNNModelWrapper):
 
 
 class MultiCNNModelWrapper(NNBaseModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
-        """
-        model.add(Conv1D(filters=64, kernel_size=15, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
-        model.add(Conv1D(filters=32, kernel_size=3, activation='relu'))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add(Conv1D(filters=32, kernel_size=3, activation='relu'))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add(Flatten())
-        model.add(Dropout(0.2))
-        model.add(Dense(100, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(self.config.n_outputs))
-        """
 
         model = Sequential()
         model.add(Conv1D(filters=64, kernel_size=15, activation='relu', input_shape=(self.config.n_steps, self.config.n_features)))
@@ -1106,9 +1019,7 @@ class MultiCNNModelWrapper(NNBaseModelWrapper):
 
 
 class AutoencoderMultiCNNModelWrapper(MultiCNNModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -1134,9 +1045,7 @@ class AutoencoderMultiCNNModelWrapper(MultiCNNModelWrapper):
 
 
 class AutoencoderRandomDropoutMultiCNNModelWrapper(MultiCNNModelWrapper):
-    """
-    Done!
-    """
+
     def create_model(self):
 
         model = Sequential()
@@ -1159,162 +1068,6 @@ class AutoencoderRandomDropoutMultiCNNModelWrapper(MultiCNNModelWrapper):
         model.compile(optimizer=self.optimizer, loss=self.loss_metric)
 
         self.model = model
-
-"""
-class ResNet50ModelWrapper(NNBaseModelWrapper):
-
-    # Thanks to https://github.com/priya-dwivedi/Deep-Learning/blob/master/resnet_keras/Residual_Networks_yourself.ipynb
-
-    def __init__(self, config: Config):
-        config.scaler = None
-        super().__init__(config)
-        self.n_classes = int(max(config.all.y) * 1.2)
-        self.steps_per_epoch = 1
-
-    def _build_identity_block(self, X, f, filters, stage, block):
-        # defining name basis
-        conv_name_base = 'res' + str(stage) + block + '_branch'
-        bn_name_base = 'bn' + str(stage) + block + '_branch'
-
-        # Retrieve Filters
-        F1, F2, F3 = filters
-
-        # Save the input value. You'll need this later to add back to the main path.
-        X_shortcut = X
-
-        # First component of main path
-        X = Conv1D(filters=F1, kernel_size=1, strides=1, padding='valid', name=conv_name_base + '2a', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2a')(X)
-        X = Activation('relu')(X)
-
-        # Second component of main path (≈3 lines)
-        X = Conv1D(filters=F2, kernel_size=f, strides=1, padding='same', name=conv_name_base + '2b', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2b')(X)
-        X = Activation('relu')(X)
-
-        # Third component of main path (≈2 lines)
-        X = Conv1D(filters=F3, kernel_size=1, strides=1, padding='valid', name=conv_name_base + '2c', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2c')(X)
-
-        # Final step: Add shortcut value to main path, and pass it through a RELU activation (≈2 lines)
-        X = Add()([X, X_shortcut])
-        X = Activation('relu')(X)
-
-        return X
-
-    def _build_convolutional_block(self, X, f, filters, stage, block, s=2):
-        # defining name basis
-        conv_name_base = 'res' + str(stage) + block + '_branch'
-        bn_name_base = 'bn' + str(stage) + block + '_branch'
-
-        # Retrieve Filters
-        F1, F2, F3 = filters
-
-        # Save the input value
-        X_shortcut = X
-
-        ##### MAIN PATH #####
-        # First component of main path
-        X = Conv1D(filters=F1, kernel_size=1, strides=s, name=conv_name_base + '2a', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2a')(X)
-        X = Activation('relu')(X)
-
-        # Second component of main path (≈3 lines)
-        X = Conv1D(filters=F2, kernel_size=f, strides=1, padding='same', name=conv_name_base + '2b', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2b')(X)
-        X = Activation('relu')(X)
-
-        # Third component of main path (≈2 lines)
-        X = Conv1D(filters=F3, kernel_size=1, strides=1, padding='valid', name=conv_name_base + '2c', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name=bn_name_base + '2c')(X)
-
-        ##### SHORTCUT PATH #### (≈2 lines)
-        X_shortcut = Conv1D(filters=F3, kernel_size=1, strides=s, padding='valid', name=conv_name_base + '1', kernel_initializer=glorot_uniform(seed=0))(X_shortcut)
-        X_shortcut = BatchNormalization(axis=2, name=bn_name_base + '1')(X_shortcut)
-
-        # Final step: Add shortcut value to main path, and pass it through a RELU activation (≈2 lines)
-        X = Add()([X, X_shortcut])
-        X = Activation('relu')(X)
-
-        return X
-
-    def _build_resnet50(self, input_shape):
-
-        # Define the input as a tensor with shape input_shape
-        X_input = Input(input_shape)
-
-        # Zero-Padding
-        X = ZeroPadding1D()(X_input)
-
-        # Stage 1
-        X = Conv1D(filters=64, kernel_size=7, strides=2, name='conv1', kernel_initializer=glorot_uniform(seed=0))(X)
-        X = BatchNormalization(axis=2, name='bn_conv1')(X)
-        X = Activation('relu')(X)
-
-        X = MaxPooling1D(pool_size=3, strides=2)(X)
-
-        # Stage 2
-        X = self._build_convolutional_block(X, f=3, filters=[64, 64, 256], stage=2, block='a', s=1)
-        X = self._build_identity_block(X, 3, [64, 64, 256], stage=2, block='b')
-        X = self._build_identity_block(X, 3, [64, 64, 256], stage=2, block='c')
-
-        # Stage 3 (≈4 lines)
-        X = self._build_convolutional_block(X, f=3, filters=[128, 128, 512], stage=3, block='a', s=2)
-        X = self._build_identity_block(X, 3, [128, 128, 512], stage=3, block='b')
-        X = self._build_identity_block(X, 3, [128, 128, 512], stage=3, block='c')
-        X = self._build_identity_block(X, 3, [128, 128, 512], stage=3, block='d')
-
-        # Stage 4 (≈6 lines)
-        X = self._build_convolutional_block(X, f=3, filters=[256, 256, 1024], stage=4, block='a', s=2)
-        X = self._build_identity_block(X, 3, [256, 256, 1024], stage=4, block='b')
-        X = self._build_identity_block(X, 3, [256, 256, 1024], stage=4, block='c')
-        X = self._build_identity_block(X, 3, [256, 256, 1024], stage=4, block='d')
-        X = self._build_identity_block(X, 3, [256, 256, 1024], stage=4, block='e')
-        X = self._build_identity_block(X, 3, [256, 256, 1024], stage=4, block='f')
-
-        # Stage 5 (≈3 lines)
-        X = self._build_convolutional_block(X, f=3, filters=[512, 512, 2048], stage=5, block='a', s=2)
-        X = self._build_identity_block(X, 3, [512, 512, 2048], stage=5, block='b')
-        X = self._build_identity_block(X, 3, [512, 512, 2048], stage=5, block='c')
-
-        X = AveragePooling1D(pool_size=2, name="avg_pool")(X)
-
-        # output layer
-        X = Flatten()(X)
-        X = Dense(self.n_classes, activation='softmax', name='fc' + str(self.n_classes), kernel_initializer=glorot_uniform(seed=0))(X)
-
-        # Create model
-        model = Model(inputs=X_input, outputs=X, name='ResNet50')
-
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-
-        return model
-
-    def create_model(self):
-        self.model = self._build_resnet50(input_shape=(self.config.n_steps, self.n_classes))
-
-    def X_y(self, config: Config = None):
-
-        X, y = super().X_y(config)
-
-        X = tf.one_hot(X, self.n_classes, axis=2)
-
-        y = np_utils.to_categorical(y.reshape(y.shape[0]), self.n_classes)
-
-        return X, y
-
-    def _format_predicted_values(self, vals):
-        p = np.argmax(vals, axis=0)
-        return [p]
-
-    def _reshape_train_input(self, x):
-        return x.reshape((x.shape[0], self.config.n_steps))
-
-    def _reshape_predict_input(self, x):
-        x = x.astype(np.int64)
-        x = tf.one_hot(x, self.n_classes, axis=1).numpy()
-        return x.reshape(1, x.shape[0], x.shape[1])
-"""
 
 
 class ResNetClassificationModelWrapper(NNBaseModelWrapper):
@@ -1441,6 +1194,8 @@ class ResNetClassificationModelWrapper(NNBaseModelWrapper):
 
 
 class ResNetLSTMModelWrapper(NNBaseModelWrapper):
+
+    # Thanks to https://github.com/priya-dwivedi/Deep-Learning/blob/master/resnet_keras/Residual_Networks_yourself.ipynb
 
     def __init__(self, config: Config):
         config.scaler = None

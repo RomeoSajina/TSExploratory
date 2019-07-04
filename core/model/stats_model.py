@@ -195,9 +195,6 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
 
         a = t.append(a)
 
-        #self.config.train = a[0:-60]
-        #self.config.test = a[-60:]
-        #self.config.all = pd.concat([self.config.train, self.config.test])
         self.config.set_train_and_test(a[0:-60], a[-60:])
 
         if self.config.verbose > 1:

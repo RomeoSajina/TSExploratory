@@ -73,9 +73,3 @@ class ProphetModelWrapper(StatsBaseModelWrapper):
 
     def n_params(self):
         return 0 if self.model is None else sum(len(np.array(x).flatten()) for x in [*self.model.params.values()])
-
-
-#plot_predictions(config, prophet_predict(config, model))
-#plot_multiple_predictions(config, prophet_predict_multiple(config, model, model_fit_fnc=model_fit_fnc))
-
-#plot_train_predictions(config, prophet_predict(config, model, days=len(config.all))[:-len(config.test)+1]) # Remove test set

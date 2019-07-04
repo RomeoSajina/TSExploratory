@@ -2,9 +2,6 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import datetime
 from core.cddm import *
-#from core.cddm import EarlyConceptDriftDetectionMethod, IgnoreConceptDriftDetectionMethod, AlwaysConceptDriftDetectionMethod
-#from tensorflow.python.keras.callbacks import EarlyStopping, TerminateOnNaN
-#from core.model.callback import EarlyStoppingAtMinLoss
 
 
 class Config:

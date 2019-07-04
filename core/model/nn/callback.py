@@ -153,28 +153,3 @@ class EarlyStoppingAtMinLoss(Callback):
                             print('Restoring model weights from the end of the last epoch.')
                         self.model.set_weights(self.last_weights)
 
-
-"""
-class RestoreAndTerminateOnNaN(Callback):
-    
-    def __init__(self):
-        self.best_weights = None
-        super(RestoreAndTerminateOnNaN, self).__init__()
-    
-    def on_batch_end(self, batch, logs=None):
-        logs = logs or {}
-        loss = logs.get('loss')
-        
-        if loss is not None:
-        
-            if np.isnan(loss) or np.isinf(loss):
-                print('Batch %d: Invalid loss, terminating training' % (batch))
-            
-                if self.best_weights is not None:
-                    print('Restoring model weights from the end of the last epoch.')
-                    self.model.set_weights(self.best_weights)
-    
-                self.model.stop_training = True
-        
-        self.best_weights = self.model.get_weights()     
-"""

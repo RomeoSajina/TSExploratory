@@ -8,7 +8,7 @@ warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
 config = DataFactory.load_ts()
 
-#config.apply_metadata(Metadata.version_1())
+#config.apply_metadata(Metadata.version_7())
 #config.apply_metadata(Metadata.version_2())
 #config.apply_metadata(Metadata.version_3())
 config.apply_metadata(Metadata.version_4())
@@ -54,6 +54,8 @@ model = MLPModelWrapper(config)
 model = AutoencoderMLPModelWrapper(config)
 model = AutoencoderCNNModelWrapper(config)
 model = AutoencoderMultiCNNModelWrapper(config)
+model = AutoencoderMLPLSTMModelWrapper(config)
+model = AutoencoderMLPGRUModelWrapper(config)
 model = AutoencoderRandomDropoutMLPModelWrapper(config)
 model = RandomDropoutLSTMModelWrapper(config)
 model = AutoencoderRandomDropoutBidirectionalLSTMModelWrapper(config)
@@ -106,6 +108,8 @@ ALL = [
     AutoencoderMLPModelWrapper,
     AutoencoderCNNModelWrapper,
     AutoencoderMultiCNNModelWrapper,
+    AutoencoderMLPLSTMModelWrapper,
+    AutoencoderMLPGRUModelWrapper,
     AutoencoderRandomDropoutMLPModelWrapper,
     RandomDropoutLSTMModelWrapper,
     AutoencoderRandomDropoutBidirectionalLSTMModelWrapper,
@@ -167,8 +171,6 @@ def load_for_concept_drift():
     return config, model
 
 config, model = load_for_concept_drift()
-
-#model.epochs = 1000
 
 config.cddm = AdaptiveCDDM()
 

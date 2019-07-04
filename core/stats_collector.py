@@ -124,6 +124,10 @@ class StatsCollector:
 
         stats = StatsCollector.load_mtlp_stats()
 
+        """
+        stats = stats[(stats.model.str.contains("RandomDropout") == False) & (stats.model.str.contains("ResNet") == False) & (stats.model.str.contains("TimeDistributed") == False) & (stats.model != "CNNLSTM") ]
+        """
+
         stats_models = stats[[issubclass(get_model_class(x), StatsBaseModelWrapper) for x in stats.model]]
         nn_models = stats[[issubclass(get_model_class(x), NNBaseModelWrapper) for x in stats.model]]
         persistent_models = stats[(~stats.isin(stats_models)) & (~stats.isin(nn_models))].dropna()
@@ -180,10 +184,10 @@ class StatsCollector:
         stats.test_avg_mae = stats.test_avg_mae.round(2)
         stats.test_avg_fa = stats.test_avg_fa.round(2)
 
+        # ERR = MAE + (MAE * | 1 - FA |) -> Test faza
         stats.loc[:, "test_error"] = stats.test_avg_mae + (stats.test_avg_mae * abs(1 - stats.test_avg_fa))
         stats.test_error = stats.test_error.round(2)
 
-        # ERR = MAE + (MAE * | 1 - fa |)
 
         """
         stats = stats[stats.model.str.contains("RandomDropout") == False]

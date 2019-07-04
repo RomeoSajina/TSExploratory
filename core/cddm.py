@@ -134,6 +134,8 @@ class KruskalWallisOutputCDDM(ConceptDriftDetectionMethod):
 
 class BFASTCDDM(ConceptDriftDetectionMethod):
 
+    # https://pypi.org/project/bfast/#files
+
     def _is_drifting(self):
 
         x_l = pd.DatetimeIndex(np.concatenate([self._train.index, self._new_values.index]))
@@ -380,71 +382,3 @@ class CUSUMCDDM(ConceptDriftDetectionMethod):
             ax2.legend(loc='best', framealpha=.5, numpoints=1)
             plt.tight_layout()
             plt.show()
-
-
-"""
-def r():
-
-    # https://pypi.org/project/bfast/#files
-
-    from bfast import BFASTCPU as BFAST
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    config = None
-
-    x_l = config.all.index
-    y_l = config.all.y.values
-
-    y_pred_range = 60
-
-    start = 915
-    start = (len(x_l)-365)
-    start = (len(x_l)-305)
-    start = (len(x_l)-y_pred_range*3)
-    start = (len(x_l)-y_pred_range*2)
-    start = (len(x_l)-y_pred_range)
-
-    x_l = x_l[0:start+y_pred_range]
-    y_l = y_l[0:start+y_pred_range]
-
-    bf = BFAST(x_l[start], x_l, verbose=1)
-
-    bf.fit(y_l)
-
-    #bf.first_break
-
-    plt.plot(x_l, y_l)
-    plt.axvline(x=x_l[start], color="red")
-
-    indexes = start + np.array(np.where(bf.breaks==True)).flatten()
-    plt.plot(x_l[indexes], y_l[indexes], 'ro', color="orange")#, marker='o')
-    plt.scatter(x_l[indexes], y_l[indexes], marker='o', edgecolors="orange", color="orange")
-
-    plt.plot(x_l, bf.y_pred, color="yellow")
-
-    plt.legend(list(["y", "Start", "Breakpoints", "BFAST Model"]), loc="best")
-    plt.title("Breaks For Additive Season and Trend (BFAST)")
-
-    from scipy.stats import kruskal
-    # Kruskal Wellis test - ako su distribucije erorra dovoljno različite onda će postojat značajna razlika između njih p<alpha
-
-    diff = []
-    data1, data2, data3 = diff[0:60], diff[60:90], diff[90:97]
-    #data1, data2, data3 = y_l[-180:-120], y_l[-120:-60], y_l[-60:]
-    data1, data2, data3 = y_l[-60-(365*2):-(365*2)], y_l[-60-365:-365], y_l[-60:]
-    data1, data2, data3 = y_l[-300-(365*2):-(365*2)], y_l[-300-365:-365], y_l[-300:]
-
-    stat, p = kruskal(data1, data2, data3)
-    stat, p = kruskal(data1, data2)
-    stat, p = kruskal(data2, data3)
-
-    print('Statistics=%.3f, p=%.3f' % (stat, p))
-
-    alpha = 0.05
-    if p > alpha:
-        print('Same distributions (fail to reject H0)')
-    else:
-        print('Different distributions (reject H0)')
-        
-"""
