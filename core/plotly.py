@@ -414,14 +414,12 @@ class Plotly():
     def plot_acf(config):
         # Autocorrelation
         plot_acf(config.all.y, lags=365, title="ACF")
-        # q = 14 - postoji statistički signifikantna autokorelacija sa 14 danom unatrag (363????)
         Plotly.show()
 
     @staticmethod
     def plot_pacf(config):
         # Partial Autocorrelation
         plot_pacf(config.all.y, lags=365, title="PACF")
-        # p = 14
         Plotly.show()
 
     @staticmethod

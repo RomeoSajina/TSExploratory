@@ -2,6 +2,7 @@ from core.model.base_model import StatsBaseModelWrapper
 import statsmodels.api as sm
 from statsmodels.tsa.arima_model import ARMA, ARIMA, ARIMAResults, ARMAResults
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults, SARIMAX
+from statsmodels.graphics.tsaplots import acf, pacf
 from core.config import Config
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ class ARIMAModelWrapper(StatsBaseModelWrapper):
         self.d = 0
         self.q = 5
         self._model = None
+        self.auto_define_hyperparameters = True
 
     def adfuller_test(self):
         # Augmented Dickey-Fuller test
@@ -26,9 +28,83 @@ class ARIMAModelWrapper(StatsBaseModelWrapper):
         # Zaključak: nije potrebno diferenciranje
         return adf
 
+    def _define_hyperparameters(self):
+
+        p = self.adfuller_test()[1]
+
+        if p >= 0.05:
+            self.d = 1
+
+        def get_ac_hp(fnc):
+            acf_v, acf_ci = fnc(self.config.all.y.values, nlags=365, alpha=.05)
+            lower_bound, upper_bound = acf_ci[:, 0] - acf_v, acf_ci[:, 1] - acf_v
+
+            tmp = [x > upper_bound[i] if x > 0 else x < lower_bound[i] for i, x in enumerate(acf_v)]
+
+            return np.where(np.array(tmp) == False)[0][0] - 1
+
+        self.q = get_ac_hp(acf)
+        self.p = get_ac_hp(pacf)
+
+        if self.config.verbose > 1:
+            print("Calulated hyperparameters: p={0}, d={1}, q={2}".format(self.p, self.d, self.q))
+
     def create_model(self):
 
+        if self.auto_define_hyperparameters:
+            self._define_hyperparameters()
+
         self._model = ARIMA(self.config.train.y.values, order=(self.p, self.d, self.q))
+
+    def fit(self):
+
+        self.create_model()
+
+        if self.save_load_model:
+            try:
+                self.load()
+            except:
+                self._fit_model_internal()
+                self.save()
+                if self.config.verbose > 0:
+                    print("Saved model: " + self.__class__.__name__ + ", " + self.model.__class__.__name__)
+        else:
+            self._fit_model_internal()
+
+    def _fit_model_internal(self):
+
+        if self.auto_define_hyperparameters:
+
+            try:
+                self.fit_model()
+            except:
+
+                def call_again():
+                    print("Call again {3}: p={0}, d={1}, q={2}".format(self.p, self.d, self.q, self.__class__.__name__.replace("ModelWrapper", "")))
+                    self.auto_define_hyperparameters = False
+                    self.create_model()
+                    self.auto_define_hyperparameters = True
+                    self._fit_model_internal()
+
+                if self.d == 0:
+                    self.d = 1
+                    call_again()
+                    return
+                else:
+                    self.d = 0
+
+                if self.q > 1 and self.q > self.p:
+                    self.q -= 1
+                    call_again()
+                    return
+
+                elif self.p > 1 and self.p > self.q:
+                    self.p -= 1
+                    call_again()
+                    return
+
+        else:
+            self.fit_model()
 
     def fit_model(self, refitting=True):
         self.model = self._model.fit(trend='nc')
@@ -78,6 +154,7 @@ class ARIMAModelWrapper(StatsBaseModelWrapper):
         # lag = model_fit.model.order[0] # 14, model_fit.model.k_ma
         #lag = 14
         lag = self.p if self.p > self.q else self.q
+        lag += self.d
 
         # dynamic=True => Recursive Multi-step forecast
         predictions_multistep = self.model.predict(start=lag, end=len(self.config.train) - 1, dynamic=True)
@@ -103,6 +180,9 @@ class ARIMAModelWrapper(StatsBaseModelWrapper):
     def n_params(self):
         return 0 if self.model is None else len(self.model.params)
 
+    def info(self):
+        return super().info() + "_p_{0}_d_{1}_q_{2}".format(self.p, self.d, self.q)
+
 
 class ARMAModelWrapper(ARIMAModelWrapper):
 
@@ -112,6 +192,10 @@ class ARMAModelWrapper(ARIMAModelWrapper):
         self.q = 5
 
     def create_model(self):
+
+        if self.auto_define_hyperparameters:
+            self._define_hyperparameters()
+
         self._model = ARMA(self.config.train.y.values, order=(self.p, self.q))
 
     def fit_model(self, refitting=True):
@@ -142,8 +226,13 @@ class SARIMAXModelWrapper(ARIMAModelWrapper):
         self.p = 1
         self.q = 1
         self.m = 365
+        self.auto_define_hyperparameters = False
 
     def create_model(self):
+
+        if self.auto_define_hyperparameters:
+            self._define_hyperparameters()
+
         self._model = SARIMAX(self.config.train.y.values,
                               order=(self.p, self.d, self.q),
                               seasonal_order=(self.p, self.d, self.q, self.m),

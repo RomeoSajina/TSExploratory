@@ -26,18 +26,18 @@ class DataFactory:
 
         data = data[data["VRIJEME_ZAMRZAVANJA"] == mx]
 
-        data.STATUS_REZERVACIJE.fillna("F")
+        data.STATUS_REZERVACIJE.fillna("F", inplace=True)
         data = data[[x in statuses for x in data.STATUS_REZERVACIJE]]
         data = data[[x in channels for x in data.KANAL_ID]]
 
-        columns = ["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "BROJ_SOBA_BOOK"]
+        columns = ["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "BROJ_SOBA_BOOK", "HOTEL"]
 
         data = data[columns]
 
-        data.to_csv("data/reservations.csv")
+        data.to_csv(Config.base_dir() + "data/reservations.csv")
 
     @staticmethod
-    def load_ts(end_date=None, target_date=None):
+    def load_ts(end_date=None, target_date=None, data=None, use_cache=True):
 
         if target_date is None:
             target_date = datetime.datetime(2018, 7, 1)
@@ -63,13 +63,16 @@ class DataFactory:
             return pd.read_csv(Config.base_dir() + "data/reservations.csv",
                                parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO"],
                                low_memory=False)
+
         try:
-            return load_from_temp()
+            if use_cache:
+                return load_from_temp()
         except:
             pass
 
         try:
-            data = load_data()
+            if data is None:
+                data = load_data()
         except FileNotFoundError:
             DataFactory._prebuild_data()
             data = load_data()
@@ -78,7 +81,7 @@ class DataFactory:
         data.DATUM_DO = data.DATUM_DO.dt.normalize()
         data.DATUM_KREIRANJA = data.DATUM_KREIRANJA.dt.normalize()
 
-        min_date = datetime.datetime(2015, 7, 1)
+        min_date = target_date.replace(year=target_date.year-3) #datetime.datetime(2015, 7, 1)
         max_date = target_date
 
         data["DATUM_OD_C"] = pd.to_datetime([datetime.date(2018, 2, 28) if x == datetime.date(2016, 2, 29) else x.replace(year=2018) for x in data.DATUM_OD.dt.date.values])
@@ -116,7 +119,9 @@ class DataFactory:
         ts = ts.set_index("X", drop=True)
 
         config = Config.build(ts, end_date, target_date)
-        save_to_temp(config)
+
+        if use_cache:
+            save_to_temp(config)
 
         return config
 
@@ -236,81 +241,67 @@ class DataFactory:
         plt.show()
 
     @staticmethod
-    def build_aggregated():
+    def load_ts2(target_date=None, end_date=None, use_cache=True):
 
-        def build_extended():
-            data = pd.read_csv(Config.base_dir() + "data/reservations_all.csv",
-                               parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
+        if target_date is None:
+            target_date = datetime.datetime(2018, 7, 1)
+
+        if end_date is None:
+            end_date = datetime.datetime(2018, 5, 3)
+            #end_date = target_date - datetime.timedelta(60)
+
+        temp_file_path = Config.base_dir() + ".temp/ts2_method_configs_" + end_date.strftime("%d_%m_%Y") + "_" + target_date.strftime("%d_%m_%Y") + ".pkl"
+
+        def load_from_temp():
+            with open(temp_file_path, 'rb') as input:
+                return pickle.load(input)
+
+        def save_to_temp(c):
+            import os
+            if not os.path.exists(temp_file_path.split("config")[0]):
+                os.mkdir(temp_file_path.split("config")[0])
+
+            with open(temp_file_path, 'wb') as output:
+                pickle.dump(c, output, pickle.HIGHEST_PROTOCOL)
+
+        def load():
+            return pd.read_csv(Config.base_dir() + "data/reservations.csv",
+                               parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO"],
                                low_memory=False)
-
-            g = data.groupby(["HOTEL", "GODINA", "SIF_REZERVACIJE"])
-            mx = g["VRIJEME_ZAMRZAVANJA"].transform(max)
-
-            data = data[data["VRIJEME_ZAMRZAVANJA"] == mx]
-
-            columns = ["DATUM_KREIRANJA", "KANAL_ID", "DATUM_OD", "DATUM_DO", "BROJ_OSOBA_BOOK",
-                       "BROJ_SOBA_BOOK", "STORNO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA", "HOTEL"]
-
-            data = data[columns]
-
-            data.to_csv(Config.base_dir() + "data/reservations_extended.csv")
-            return data
-
-        def load_extended():
-            data = pd.read_csv(Config.base_dir() + "data/reservations_extended.csv",
-                               parse_dates=["DATUM_KREIRANJA", "DATUM_OD", "DATUM_DO", "DATUM_STORNA", "VRIJEME_ZAMRZAVANJA"],
-                               index_col=0,
-                               low_memory=False)
-            return data
+        try:
+            if use_cache:
+                return load_from_temp()
+        except:
+            pass
 
         try:
-            data = load_extended()
+            data = load()
         except:
-            data = build_extended()
+            DataFactory._prebuild_data()
+            data = load()
 
-        data.DATUM_OD = data.DATUM_OD.dt.normalize()
-        data.DATUM_DO = data.DATUM_DO.dt.normalize()
-        data.DATUM_KREIRANJA = data.DATUM_KREIRANJA.dt.normalize()
+        #hotels = data.HOTEL.unique()
 
-        data["DATUM_OD_C"] = pd.to_datetime([datetime.date(2018, 2, 28) if x == datetime.date(2016, 2, 29) else x.replace(year=2018) for x in data.DATUM_OD.dt.date.values])
-        data["DATUM_DO_C"] = pd.to_datetime([datetime.date(2018, 2, 28) if x == datetime.date(2016, 2, 29) else x.replace(year=2018) for x in data.DATUM_DO.dt.date.values])
+        hotels = ["H" + str(i+1) for i in range(12)]
 
-        min_date = datetime.datetime(2018, 6, 15)
-        max_date = datetime.datetime(2018, 9, 15)
+        configs = list()
 
-        range_dates = [min_date + datetime.timedelta(days=x) for x in range(0, (max_date - min_date).days + 1)]
+        for h in hotels:
+            filtered_data = data[data.HOTEL == h].copy()
 
-        assert min_date == range_dates[0] and max_date == range_dates[-1], "Range of dates generated incorrectly"
+            config = DataFactory.load_ts(end_date=end_date, target_date=target_date, use_cache=False, data=filtered_data)
+            """
+            plt.plot(config.all)
+            plt.title(h + " (Total: " + str(config.all.y.sum()) + ")")
+            plt.savefig(Config.base_dir() + "figures/tmp/" + h + ".png")
+            plt.close("all")
+            """
+            configs.append({"hotel": h, "config": config})
 
-        elem_list = []
+        if use_cache:
+            save_to_temp(configs)
 
-        for index in range(len(range_dates)):
-
-            obs_date = range_dates[index]
-
-            obs_date_data = data[(data.DATUM_OD_C <= obs_date) & (data.DATUM_DO_C > obs_date)]
-
-            g = obs_date_data.groupby(["HOTEL", "KANAL_ID", "DATUM_KREIRANJA"])
-
-            for group in g.groups:
-                hotel = group[0]
-                kanal = group[1]
-                datum = group[2]
-
-                filtered_data = obs_date_data[(obs_date_data.HOTEL == hotel) & (obs_date_data.KANAL_ID == kanal) & (obs_date_data.DATUM_KREIRANJA == datum)]
-
-                ts_elem = dict()
-                ts_elem["DATUM_KREIRANJA"] = datum
-                ts_elem["HOTEL"] = hotel
-                ts_elem["KANAL"] = kanal
-                ts_elem["ZA_DATUM"] = obs_date
-                ts_elem["BROJ_SOBA_BOOK"] = filtered_data.BROJ_SOBA_BOOK.sum()
-
-                elem_list.append(ts_elem)
-
-        df = pd.DataFrame(elem_list)
-        df.to_csv(Config.base_dir() + "data/reservations_aggregated.csv", sep=";")
-
+        return configs
 
     """
     DataFactory.plot_yearly()
