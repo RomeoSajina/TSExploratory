@@ -166,9 +166,14 @@ def load_extended_stats():
                 # Skip if no data found
                 continue
 
-            for c in ["p_60", "p_30", "p_7"]:
+            for num_c in [60, 30, 7]:
 
-                size = int(c.split("_")[1])
+                c = "p_" + str(num_c)
+                rc = "real_" + str(num_c)
+
+                size = num_c
+
+                stats.loc[filtered, rc] = stats[filtered][c].apply(lambda x: config.test.y.values[-size:])
 
                 stats.loc[filtered, c + "_maes"] = \
                     stats[filtered][c].apply(lambda x: [round(mean_absolute_error([config.test.y.values[-size:][i]], [x[i]]), 2) for i in range(size)])
@@ -176,6 +181,15 @@ def load_extended_stats():
                 stats.loc[filtered, c + "_mae"], stats.loc[filtered, c + "_acc"] = \
                     zip(*stats[filtered][c].apply(lambda x: np.array(StatsCollector.calculate_stats(config.test.y.values[-size:], x))[[0, 2]]))
 
+            """
+            Not working correctly!!!
+            
+            #tempy = stats[ [len(x[1]["p_train"])<20 for x in stats.iterrows()] ]#[["model_info", "p_train_ms"]]
+            #tempy[["model_info", "hotel", "p_train"]]
+            #stats = stats.drop(tempy.index)
+            #len(stats)
+            #save_stats(stats)
+            
             for c in ["p_train", "p_train_ms"]:
 
                 stats.loc[filtered, c + "_maes"] = \
@@ -183,7 +197,7 @@ def load_extended_stats():
 
                 stats.loc[filtered, c + "_mae"], stats.loc[filtered, c + "_acc"] = \
                     zip(*stats[filtered][c].apply(lambda x: np.array(StatsCollector.calculate_stats(config.train.y.values[-len(x):], x))[[0, 2]]))
-
+            """
         stats.loc[:, "simple_model_name"] = stats.model_info.str.split("_").str[0]
 
     return stats
@@ -259,42 +273,6 @@ def reserve(hotel: str, config: Config, model: BaseModelWrapper):
     return True
 
 
-def bug_fix():
-
-    stats = load_stats()
-
-    def f(x):
-
-        if len(x) > 1:
-            return np.array(x[0]).flatten(), np.array(x[1]).flatten() if x[1] is not None else np.zeros(1)
-        else:
-            return np.array(x).flatten(), np.zeros(1)
-
-    stats.p_train, stats.p_train_ms = zip(*stats.p_train.apply(f))
-
-    for c in ["p_60", "p_30", "p_7"]:
-        stats[c] = stats[c].apply(lambda x: np.array(x).flatten())
-
-    # multiple same records bug fix
-    groups = stats.groupby(["target_date", "hotel", "model_info"])
-    remove_indicies = []
-    for name, group in groups:
-        remove_indicies.extend(group.index[1:])
-
-    stats = stats.drop(remove_indicies)
-
-
-    """
-    Run cancel bugs:
-    remove_indicies = stats[(stats.train_time < 10) & (stats.model_info.str.split("_").str[0] == "GRU")].index
-    stats = stats.drop(remove_indicies)
-    """
-
-    stats.reset_index(inplace=True, drop=True)
-
-    save_stats(stats)
-
-
 def run():
 
     start = time.time()
@@ -324,17 +302,8 @@ stats = load_extended_stats()
 
 stats = load_stats()
 # stats[stats.model_info == "SARIMAX_p_1_d_0_q_1"].values
-"""
-stats2 = load_stats()
-stats = stats.drop('index', 1)
-stats = stats.append(stats2, ignore_index=True)
-stats.columns
-save_stats(stats)
-"""
 
 len(stats)
-#529, 555
-#bug_fix()
 
 
 
