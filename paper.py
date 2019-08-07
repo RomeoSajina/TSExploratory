@@ -325,7 +325,7 @@ plot_ts2(configs)
 
 
 
-
+#### Line plot
 stats = load_extended_stats()
 model_simple_names = stats.simple_model_name.unique()
 model_in_focus = model_simple_names[0]
@@ -359,7 +359,7 @@ plt.title(model_in_focus)
 
 
 
-
+### Box plot
 def prepare_for_boxplot(subset, y_attr="p_60_maes"):
 
     bx_data = pd.DataFrame(columns=["hotel", "target_date", "y"])
@@ -377,7 +377,7 @@ def prepare_for_boxplot(subset, y_attr="p_60_maes"):
 
 stats = load_extended_stats()
 
-model_in_focus = stats.simple_model_name.unique()[0]
+#model_in_focus = stats.simple_model_name.unique()[0]
 
 for model_in_focus in stats.simple_model_name.unique():
 

@@ -122,6 +122,9 @@ models/final/*.sav
 models/*.pkl
 models/*.h5
 models/*.sav
+models/diplomski/*.pkl
+models/diplomski/*.h5
+models/diplomski/*.sav
 figures/
 data/unused/
 data/reservations_all.csv

@@ -258,8 +258,8 @@ class DataFactory:
 
         def save_to_temp(c):
             import os
-            if not os.path.exists(temp_file_path.split("config")[0]):
-                os.mkdir(temp_file_path.split("config")[0])
+            if not os.path.exists(temp_file_path.split("ts2_method")[0]):
+                os.mkdir(temp_file_path.split("ts2_method")[0])
 
             with open(temp_file_path, 'wb') as output:
                 pickle.dump(c, output, pickle.HIGHEST_PROTOCOL)
