@@ -73,6 +73,37 @@ def plot_ts2(configs: list):
     Plotly.show()
 
 
+def plot_for_hotel(target_dates=[datetime.datetime(2018, 7, 1), datetime.datetime(2018, 8, 1), datetime.datetime(2018, 9, 1)]):
+
+    h_cnf = dict()
+
+    for target_date in target_dates:
+
+        configs = DataFactory.load_ts2(target_date=target_date, end_date=target_date - datetime.timedelta(days=60))
+
+        for cnf in configs:
+            if cnf["hotel"] in h_cnf.keys():
+                h_cnf[cnf["hotel"]].append(cnf["config"])
+            else:
+                h_cnf[cnf["hotel"]] = [cnf["config"]]
+
+    for h in h_cnf.keys():
+
+        legend = list()
+
+        for i, cnf in enumerate(h_cnf[h]):
+            plt.plot(cnf.all.index.values, cnf.all.y.values, color=Plotly.COLOR_PALETTE[::3][i])
+            legend.append(cnf.target_date.strftime("%d.%m."))
+
+        plt.title(h)
+        plt.legend(legend, loc="best")
+        Plotly.show()
+        #plt.gca().figure.autofmt_xdate()
+        Plotly.savefigpkg("paper/" + h + ".png")
+
+        plt.close('all')
+
+
 def apply_for_models(hotel: str, config: Config, model_list: list, fnc, skip_fnc=None):
 
     for model_class in model_list:
@@ -360,20 +391,28 @@ plt.title(model_in_focus)
 
 
 ### Box plot
-def prepare_for_boxplot(subset, y_attr="p_60_maes"):
+def prepare_for_boxplot(subset, y_attr="p_60_maes", per_hotel=True):
 
-    bx_data = pd.DataFrame(columns=["hotel", "target_date", "y"])
+    if per_hotel:
+        bx_data = pd.DataFrame(columns=["hotel", "target_date", "y"])
+    else:
+        bx_data = pd.DataFrame(columns=["simple_model_name", "target_date", "y"])
 
     def f(x):
         ys = x[y_attr]
 
         for y in ys:
-            bx_data.loc[len(bx_data)] = [x.hotel, x.target_date.strftime("%d.%m."), y]
+            bx_data.loc[len(bx_data)] = [x.hotel if per_hotel else x.simple_model_name, x.target_date.strftime("%d.%m."), y]
 
     subset.apply(f, axis=1)
 
-    return bx_data
+    if not per_hotel:
+        for m in bx_data.simple_model_name.unique():
+            bx_data.loc[bx_data.simple_model_name == m, "mean"] = bx_data[bx_data.simple_model_name == m].y.mean()
 
+        bx_data = bx_data.sort_values("mean")
+
+    return bx_data
 
 stats = load_extended_stats()
 
@@ -383,7 +422,7 @@ for model_in_focus in stats.simple_model_name.unique():
 
     subset = stats[(stats.simple_model_name == model_in_focus)]
 
-    bx_data = prepare_for_boxplot(subset)
+    bx_data = prepare_for_boxplot(subset, per_hotel=True)
     # https://seaborn.pydata.org/generated/seaborn.boxplot.html
     sns.boxplot(x="hotel", y="y", hue="target_date", data=bx_data, palette="Set3")
     #   sns.swarmplot(x="hotel", y="y", data=bx_data, color=".55")
@@ -391,6 +430,27 @@ for model_in_focus in stats.simple_model_name.unique():
     plt.title(model_in_focus) # + " (" + target_date.strftime("%d.%m.%Y.") + ")")
     Plotly.show()
     Plotly.savefigpkg("paper/" + model_in_focus + ".png")
+
+    plt.close('all')
+
+
+## Per hotel
+#hotel_in_focus = stats.hotel.unique()[0]
+y_attr = "p_60_maes"
+
+for hotel_in_focus in stats.hotel.unique():
+
+    subset = stats[(stats.hotel == hotel_in_focus)]
+
+    bx_data = prepare_for_boxplot(subset, y_attr=y_attr, per_hotel=False)
+    # https://seaborn.pydata.org/generated/seaborn.boxplot.html
+    sns.boxplot(x="simple_model_name", y="y", hue="target_date", data=bx_data, palette="Set3")
+    #   sns.swarmplot(x="hotel", y="y", data=bx_data, color=".55")
+
+    plt.title(hotel_in_focus + " (" + y_attr + ")") # + " (" + target_date.strftime("%d.%m.%Y.") + ")")
+    Plotly.show()
+    plt.gca().figure.autofmt_xdate()
+    Plotly.savefigpkg("paper/" + hotel_in_focus + "_" + y_attr + ".png")
 
     plt.close('all')
 
