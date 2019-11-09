@@ -1,9 +1,9 @@
 # TSExploratory
 
-Evaluate your univariate time series on range of s:
+Evaluate your univariate time series on range of models:
 - Base models:
     - Persistent 
-    - Seasonal Persistent 
+    - SeasonalPersistent 
 
 - Stats models:
     - AR
@@ -12,7 +12,7 @@ Evaluate your univariate time series on range of s:
     - ARIMA
     - SARIMAX
     - UnobservedComponents
-    -Prophet
+    - Prophet
 
 - Neural network models:
     - BidirectionalLSTM
